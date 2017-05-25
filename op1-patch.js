@@ -24,10 +24,12 @@ class OP1Patch {
     var dv = new DataView(bytes.buffer, 0, bytes.byteLength);
     var length = dv.getUint32(4, false);
     if (bytes.byteLength < 8+length) {
-      throw(new Error("invalid data length"));
+      console.log("invalid length for", this.path);
+      // throw(new Error("invalid data length"));
     }
-    if (String.fromCharCode.apply(null, bytes.subarray(8, 12)) !== 'AIFC') {
-      throw(new Error("AIFC header not found"));
+    var header = String.fromCharCode.apply(null, bytes.subarray(8, 12));
+    if (header !== 'AIFC' && header !== 'AIFF') {
+      throw(new Error("AIFC/AIFF header not found"));
     }
     for (var pos = 12; pos < length; pos += 8 + wordAlign(dv.getUint32(pos + 4, false))) {
       var chunkName = String.fromCharCode.apply(null, bytes.subarray(pos, pos + 4));
@@ -38,7 +40,8 @@ class OP1Patch {
           pos + 8 + dv.getUint32(pos + 4, false)
         ));
         if (signature === 'op-1') {
-          this.metadata = JSON.parse(appl);
+          appl = appl.replace(/\0/g, ''); // json is NUL padded
+          this.metadata = JSON.parse(appl.trim());
           this._setCategory();
         }
         break;

@@ -1,22 +1,20 @@
 const menubar = require('menubar');
 const {protocol, ipcMain, shell} = require('electron');
+const {download} = require('electron-dl');
 const chokidar = require('chokidar');
 const drivelist = require('drivelist');
-// const usbDetect = require('usb-detection');
 const Url = require('url');
 const OP1Patch = require('./op1-patch');
 const ApiClient = require('./api-client');
+
+// for dev
 // require('electron-context-menu')();
 
-// TODO detect when OP-1 is connected and run watchOP1()
-// TODO stop listening when app closes
-// usbDetect.on('add', function(device) {
-//   console.log('add', device);
-// });
-// usbDetect.on('add:vid', function(device) { console.log('add', device); });
-// usbDetect.on('add:vid:pid', function(device) { console.log('add', device); });
+// TODO
+// on 'after-show' and 'open-url' check to see if OP1 is mounted and being watched.
+// if not, try to and error out to user if that fails
 
-var email, token, watcher, urlToOpen, mountpoint;
+var email, token, watcher, urlToOpen, mountpoint, patches = [];
 mountpoint = "/Users/jordan/Documents/OP-1/fakeop1";
 
 const api = new ApiClient();
@@ -33,29 +31,19 @@ mb.on('ready', function ready() {
 mb.app.on('open-url', function(e, urlStr) {
   e.preventDefault();
   console.log("got urlStr", e, urlStr);
-  // mb.window.webContents.send('urlStr', urlStr);
   if (!api.isLoggedIn()) {
     alert("Please sign in.");
     showConfig();
     return;
   }
-    
-  var parsed = Url.parse(urlStr);
-  var path = parsed.pathname
-  while (path.charAt(0) === "/") { path = path.slice(1); }
-  var parts = path.split("/");
-  var type = parts[2];
-  var id = parts[3];
-  console.log(path, parts);
-  
+  var { id, path, type } = parseUrl(urlStr);
   if (type === 'packs' && id) {
-    api.getPack(path, id, function(pack) { loadPack(pack); });
+    api.getPack(path, id, loadPack);
   } else if (type === 'patches' && id) {
-    api.getPatch(path, id, function(patch) { loadPatch(patch); });
+    api.getPatch(path, id, loadPatch);
   } else {
     console.log("Don't know how to handle URL", message);
   }
-  
 });
 
 mb.on('after-create-window', function() {
@@ -69,20 +57,58 @@ ipcMain.on('show-in-finder', (event, arg) => {
   shell.showItemInFolder(mountpoint + arg);
 });
 
-function loadPatch(patch) {
-  // check to see if there is enough space on device
-  // if so, download the patch and save to disk
-  // if no, warn user
+function loadPatch(patch, packDir) {
+  mb.showWindow();
+  var dir = [mountpoint];
+  if (patch['patch-type'] === 'drum') {
+    dir.push('drum');
+  } else {
+    dir.push('synth');
+  }
+  if (packDir) {
+    dir.push(packDir);
+  } else {
+    mb.window.webContents.send('start-download', { patch: patch });
+  }
+  result = download(mb.window, patch.links.file, { directory: dir.join("/") });
+  if (!packDir) {
+    result = result.then(function() {
+      mb.window.webContents.send('finish-download', { patch: patch });
+    });
+  }
+	return result
+  // .then(dl => console.log(dl.getSavePath()))
+	// .catch(console.error);
 }
 
 function loadPack(pack) {
-  // check to see if there is enough space on device
-  // if so, download all patches and save to disk
-  // if no, warn user
+  console.log("will load pack", pack);
+  mb.window.webContents.send('start-download', { pack: pack });
+  var result = Promise.resolve();
+  pack.patches.forEach(function(patch) {
+    result = result.then(() => loadPatch(patch, pack.id));
+  });
+  result = result.then(function() {
+    mb.window.webContents.send('finish-download', { pack: pack });
+  })
+  return result;
+}
+
+function patchCounts() {
+  var counts = { synth: 0, drum: 0, sampler: 0 }
+  patches.forEach(function(p) { counts[p.category]++; });
+  return counts;
+}
+
+function parseUrl(urlStr) {
+  var parsed = Url.parse(urlStr);
+  var path = parsed.pathname
+  while (path.charAt(0) === "/") { path = path.slice(1); }
+  var parts = path.split("/");
+  return { type: parts[2], id: parts[3], path: path };
 }
 
 function watchOP1() {
-  
   if (watcher) {
     watcher.close();
   }
@@ -96,7 +122,8 @@ function watchOP1() {
     // }
     
     watcher = chokidar.watch(mountpoint, {
-      ignored: /(^|[\/\\])\../
+      ignored: /(^|[\/\\])\../,
+      awaitWriteFinish: true
     }).on('all', (event, path) => {
       var relPath = path.slice(mountpoint.length);
       var parts = relPath.split("/");
@@ -108,13 +135,15 @@ function watchOP1() {
           try {
             const patch = new OP1Patch({path: path, relPath: relPath});
             if (patch.metadata) {
-              mb.window.webContents.send('add-patch', { patch: patch });
+              patches.push(patch);
+              mb.window.webContents.send('render-patches', patches);
             }
           } catch(e) {
             console.log(e);
           }
         } else if (event === 'unlink') {
-          mb.window.webContents.send('remove-patch', { relPath: relPath });
+          patches = patches.filter(function(p) { return p.relPath !== relPath });
+          mb.window.webContents.send('render-patches', patches);
         }
       } else {
         // console.log(event, path);

@@ -11,19 +11,16 @@ if (api.isLoggedIn()) {
   showConfig();
 }
 
-var patches = [];
-
-ipcRenderer.on('add-patch', (event, message) => {
-  // console.log('add-patch', event, message);
-  patches.push(message.patch);
-  // TODO sort patches?
+ipcRenderer.on('render-patches', (event, patches) => {
   renderPatches(patches);
 });
 
-ipcRenderer.on('remove-patch', (event, message) => {
-  // console.log('remove-patch', event, message);
-  patches = patches.filter(function(p) { return p.relPath !== message.relPath });
-  renderPatches(patches);
+ipcRenderer.on('start-download', (event, message) => {
+  console.log('start-download', message);
+});
+
+ipcRenderer.on('finish-download', (event, message) => {
+  console.log('finish-download', message);
 });
 
 document.querySelector(".patch-browser").addEventListener("click", function(e) {

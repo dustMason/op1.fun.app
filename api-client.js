@@ -1,4 +1,4 @@
-const JsonApiDataStore = require('jsonapi-datastore').JsonApiDataStore;
+const JsonApiDataStore = require('jsonapi-datastore').Store;
 const Config = require('electron-config');
 const https = require('https');
 
@@ -27,20 +27,23 @@ class ApiClient {
   }
   
   getPack(path, id, callback) {
+    var me = this;
     this._request(path, function() {
-      var pack = this.store.find("packs", id);
+      var pack = me.store.find("packs", id);
       callback(pack);
     })
   }
   
   getPatch(path, id, callback) {
+    var me = this;
     this._request(path, function() {
-      var patch = this.store.find("patches", id);
+      var patch = me.store.find("patches", id);
       callback(patch);
     })
   }
   
   _request(path, callback) {
+    var me = this;
     return https.get({
       host: 'api.op1.fun',
       path: '/v1/' + path,
@@ -52,7 +55,7 @@ class ApiClient {
       var body = '';
       res.on('data', function(d) { body += d; });
       res.on('end', function() {
-        this.store.syncWithMeta(JSON.parse(body));
+        me.store.sync(JSON.parse(body));
         callback();
       });
     });

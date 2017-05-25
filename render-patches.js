@@ -42,20 +42,26 @@ module.exports = function(patches) {
     var patch = patches[i];
     var li = patchListItem(patch);
     if (patch.packDir) {
-      if (!packs.hasOwnProperty(patch.packDir)) {
+      var packsKey = patch.category + patch.packName;
+      if (!packs.hasOwnProperty(packsKey)) {
         var titleLi = listItem(patch.packName, "pack", patch.packDir, folderIcon);
         lists[patch.category].appendChild(titleLi);
         var ul = document.createElement("ul");
-        packs[patch.packDir] = ul;
+        packs[packsKey] = ul;
         lists[patch.category].appendChild(ul);
       } 
-      packs[patch.packDir].appendChild(li);
+      packs[packsKey].appendChild(li);
     } else {
       lists[patch.category].appendChild(li);
     }
     counts[patch.category]++;
   }
   for (var cat in counts) {
-    usages[cat].innerHTML = counts[cat] + " of " + limits[cat];
+    var out = counts[cat] + " of " + limits[cat];
+    if (counts[cat] > limits[cat]) {
+      out = "<span class='over-limit'>" + out + "</span>";
+    }
+    usages[cat].innerHTML = out;
   }
+  console.log(packs);
 }
