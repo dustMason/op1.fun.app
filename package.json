@@ -8,11 +8,13 @@
     "drivelist": "^5.0.20",
     "electron-config": "^1.0.0",
     "jsonapi-datastore": "^0.4.0-beta",
-    "menubar": "^5.2.3"
+    "menubar": "^5.2.3",
+    "usb-detection": "^1.4.0"
   },
   "devDependencies": {
     "electron": "^1.6.8",
-    "electron-context-menu": "^0.9.1"
+    "electron-context-menu": "^0.9.1",
+    "electron-rebuild": "^1.5.11"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

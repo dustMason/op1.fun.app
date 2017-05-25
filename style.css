@@ -60,7 +60,8 @@ h4 {
 }
 
 .loading,
-.config {
+.config,
+.disconnected {
   position: absolute;
   left: 0;
   top: 0;
