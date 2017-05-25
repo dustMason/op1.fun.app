@@ -26,7 +26,7 @@ function listItem(text, className, href, icon) {
   if (icon) {
     var img = document.createElement("svg");
     a.prepend(img);
-    img.outerHTML = folderIcon;
+    img.outerHTML = icon;
   }
   li.appendChild(a);
   return li;
@@ -43,7 +43,7 @@ module.exports = function(patches) {
     var li = patchListItem(patch);
     if (patch.packDir) {
       if (!packs.hasOwnProperty(patch.packDir)) {
-        var titleLi = listItem(patch.packName, "pack", patch.packDir, "folder.svg");
+        var titleLi = listItem(patch.packName, "pack", patch.packDir, folderIcon);
         lists[patch.category].appendChild(titleLi);
         var ul = document.createElement("ul");
         packs[patch.packDir] = ul;
