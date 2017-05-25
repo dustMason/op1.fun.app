@@ -94,6 +94,10 @@ document.querySelector(".patch-browser").addEventListener("click", function(e) {
   }
 });
 
+document.querySelector(".header .icon").addEventListener("click", function(e){
+  showConfig();
+});
+
 configElm.querySelector("form").addEventListener("submit", function(e) {
   e.preventDefault();
   const email = configElm.querySelector("#email").value;
@@ -106,7 +110,11 @@ configElm.querySelector("form").addEventListener("submit", function(e) {
     alert("Please enter an email and API token");
   }
 });
-function showConfig() { configElm.style.display = "block"; }
+function showConfig() {
+  configElm.style.display = "block";
+  configElm.querySelector("#email").value = apiEmail;
+  configElm.querySelector("#apitoken").value = apiKey;
+}
 function hideConfig() { configElm.style.display = "none"; }
 
 function parseUrl(url) {
