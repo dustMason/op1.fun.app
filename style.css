@@ -92,6 +92,16 @@ h1 {
   height: 18px;
 }
 
+.header .icon.spinner {
+  /*display: none;*/
+}
+.header .icon.spinner span {
+  margin-right: 5px;
+}
+.header .icon.spinner svg {
+  margin-right: 5px;
+}
+
 h4,
 .usage {
   padding: 0 8px;

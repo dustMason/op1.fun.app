@@ -5,7 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "chokidar": "^1.7.0",
-    "drivelist": "^5.0.20",
+    "drivelist": "dustmason/drivelist",
     "electron-config": "^1.0.0",
     "electron-dl": "^1.9.0",
     "jsonapi-datastore": "niksy/jsonapi-datastore",

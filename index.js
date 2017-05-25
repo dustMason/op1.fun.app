@@ -15,7 +15,7 @@ const ApiClient = require('./api-client');
 // if not, try to and error out to user if that fails
 
 var email, token, watcher, urlToOpen, mountpoint, patches = [];
-mountpoint = "/Users/jordan/Documents/OP-1/fakeop1";
+// mountpoint = "/Users/jordan/Documents/OP-1/fakeop1";
 
 const api = new ApiClient();
 
@@ -117,9 +117,17 @@ function watchOP1() {
     if (error) { throw error; }
     
     // TODO find the mountpoint belonging to the OP-1 and pass it to chokidar
-    // for (var i = 0; i < drives.length; i++) {
-    //   console.log(drives[i].mountpoints);
-    // }
+    for (var i = 0; i < drives.length; i++) {
+      // console.log(drives[i]);
+      if (drives[i].description.indexOf("OP-1") > -1) {
+        mountpoint = drives[i].mountpoints[0].path;
+        break;
+      }
+    }
+    
+    if (!mountpoint) {
+      throw(new Error("OP-1 not found"));
+    }
     
     watcher = chokidar.watch(mountpoint, {
       ignored: /(^|[\/\\])\../,
