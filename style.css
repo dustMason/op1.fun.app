@@ -1,0 +1,177 @@
+@font-face {
+  font-family: 'Heebo';
+  src: url('fonts/Heebo-Thin.ttf') format('truetype');
+  font-weight: 100;
+}
+@font-face {
+  font-family: 'Heebo';
+  src: url('fonts/Heebo-Light.ttf') format('truetype');
+  font-weight: 300;
+}
+@font-face {
+  font-family: 'Heebo';
+  src: url('fonts/Heebo-Bold.ttf') format('truetype');
+  font-weight: 700;
+}
+@font-face {
+  font-family: 'Heebo';
+  src: url('fonts/Heebo-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+}
+@font-face {
+  font-family: 'Heebo';
+  src: url('fonts/Heebo-Black.ttf') format('truetype');
+  font-weight: 900;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/*.blu { color: #698EFF; }
+.grn { color: #04cb81; }
+.wht { color: #FFFFFF; }
+.red { color: #FF3A5D; }*/
+
+body {
+  background: #25252c;
+  color: #fff;
+  width: 100%;
+  font-family: Heebo;
+  font-weight: 300;
+  font-size: 14px;
+  overflow-x: hidden;
+  padding: 10px 0;
+  margin: 0;
+  line-height: 18px;
+}
+
+a {
+  color: #fff;
+  text-decoration: none;
+}
+
+h4 {
+  margin: 0;
+  padding: 0;
+  text-transform: uppercase;
+  font-weight: 100;
+  font-size: 18px;
+}
+
+.loading,
+.config {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  display: none;
+  background: #333;
+  z-index: 2;
+}
+
+h1 {
+  font-size: 14px;
+}
+.header {
+  padding: 0 10px 10px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+.header h1 {
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+.header .icon {
+  float: right;
+}
+.header .icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+h4,
+.usage {
+  padding: 0 8px;
+}
+
+
+#drum > ul,
+#synth > ul {
+  border-right: 1px solid rgba(255,255,255,0.2);
+}
+
+.patch-browser {
+  position: absolute;
+  top: 40px;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+.patch-browser > div {
+  padding-top: 5px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 33%;
+}
+#drum { left: 0; }
+#synth { left: 33%; }
+#sampler { left: 66%; }
+#synth h4, #synth .usage, #synth svg, #synth .pack { color: #698EFF; }
+#drum h4, #drum .usage, #drum svg, #drum .pack { color: #04cb81; }
+#sampler h4, #sampler .usage, #sampler svg, #sampler .pack { color: #ffffff; }
+
+.usage {
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.patch-browser ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.patch-browser > div > ul {
+  position: absolute;
+  overflow-y: scroll;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 47px;
+}
+.patch-browser ul ul a {
+  padding-left: 25px;
+}
+
+.patch-browser li {
+  margin: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.patch-browser li svg {
+  width: 15px;
+  height: 15px;
+  margin: 0 5px -2px 0;
+}
+
+.patch-browser a:hover {
+  background: #fff;
+  color: #000;
+}
+.patch-browser .pack {
+  /*font-weight: 700;*/
+  text-transform: uppercase;
+}
+.patch-browser li a {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  display: block;
+  white-space: nowrap;
+  margin: 0;
+  padding: 4px 6px;
+}
+
+.clear {
+  clear: both;
+}

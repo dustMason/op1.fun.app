@@ -1,0 +1,22 @@
+{
+  "name": "op1.fun",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "chokidar": "^1.7.0",
+    "drivelist": "^5.0.20",
+    "electron-config": "^1.0.0",
+    "jsonapi-datastore": "^0.4.0-beta",
+    "menubar": "^5.2.3"
+  },
+  "devDependencies": {
+    "electron": "^1.6.8",
+    "electron-context-menu": "^0.9.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
