@@ -93,7 +93,7 @@ h1 {
 }
 
 .header .icon.spinner {
-  /*display: none;*/
+  display: none;
 }
 .header .icon.spinner span {
   margin-right: 5px;
