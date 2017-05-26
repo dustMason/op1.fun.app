@@ -30,7 +30,6 @@ mb.on('ready', function ready() {
 
 mb.app.on('open-url', function(e, urlStr) {
   e.preventDefault();
-  console.log("got urlStr", e, urlStr);
   if (!api.isLoggedIn()) {
     alert("Please sign in.");
     showConfig();
@@ -76,9 +75,9 @@ function loadPatch(patch, packDir) {
       mb.window.webContents.send('finish-download', { patch: patch });
     });
   }
-	return result
+  return result
   // .then(dl => console.log(dl.getSavePath()))
-	// .catch(console.error);
+  // .catch(console.error);
 }
 
 function loadPack(pack) {
@@ -116,9 +115,7 @@ function watchOP1() {
   drivelist.list((error, drives) => {
     if (error) { throw error; }
     
-    // TODO find the mountpoint belonging to the OP-1 and pass it to chokidar
     for (var i = 0; i < drives.length; i++) {
-      // console.log(drives[i]);
       if (drives[i].description.indexOf("OP-1") > -1) {
         mountpoint = drives[i].mountpoints[0].path;
         break;

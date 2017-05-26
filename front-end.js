@@ -44,8 +44,8 @@ document.querySelector(".header .config-icon").addEventListener("click", functio
 
 configElm.querySelector("form").addEventListener("submit", function(e) {
   e.preventDefault();
-  const email = configElm.querySelector("#email").value;
-  const token = configElm.querySelector("#token").value;
+  var email = configElm.querySelector("#email").value;
+  var token = configElm.querySelector("#token").value;
   if (email !== '' && token !== '') {
     api.logIn(email, token);
     hideConfig();
@@ -55,8 +55,10 @@ configElm.querySelector("form").addEventListener("submit", function(e) {
 });
 function showConfig() {
   configElm.style.display = "block";
-  configElm.querySelector("#email").value = api.email();
-  configElm.querySelector("#token").value = api.token();
+  var email = api.email();
+  if (email) { configElm.querySelector("#email").value = email; }
+  var token = api.token();
+  if (token) { configElm.querySelector("#token").value = token; }
 }
 function hideConfig() { configElm.style.display = "none"; }
 
@@ -70,9 +72,3 @@ function showSpinner(note) {
   spinner.style.display = "block";
 }
 function hideSpinner() { spinner.style.display = "none"; }
-
-function parseUrl(url) {
-  const a = document.createElement("a");
-  a.href = url;
-  return a;
-}
