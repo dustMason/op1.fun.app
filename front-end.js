@@ -1,5 +1,6 @@
 const { ipcRenderer } = require('electron');
 const ApiClient = require('./api-client');
+const groupBy = require('./lib/group-by');
 
 const configElm = document.querySelector(".config");
 const api = new ApiClient();
@@ -7,6 +8,9 @@ const api = new ApiClient();
 Vue.component('patch-list', {
   template: '#patch-list',
   props: ['patches', 'limit', 'name', 'id'],
+  computed: {
+    packs: function() { return groupBy(this.patches, 'packName') }
+  },
   methods: {
     showInFinder: function(e) {
       if (e) {
@@ -19,8 +23,8 @@ Vue.component('patch-list', {
 var categoryFilter = function(patches, category) {
   var filtered = patches.filter((p) => { return p.category === category });
   return filtered.sort(function(a, b) {
-    var _a = (a.packDir || "").toLowerCase() + a.name.toLowerCase();
-    var _b = (b.packDir || "").toLowerCase() + b.name.toLowerCase();
+    var _a = (a.packDir || "") + a.name.toLowerCase();
+    var _b = (b.packDir || "") + b.name.toLowerCase();
     if (_a < _b) { return -1 } else if (_a > _b) { return 1 }
     return 0;
   });

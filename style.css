@@ -35,6 +35,10 @@
   opacity: 0;
 }
 
+.flip-list-move {
+  transform: 1s;
+}
+
 /*.blu { color: #698EFF; }
 .grn { color: #04cb81; }
 .wht { color: #FFFFFF; }

@@ -55,13 +55,22 @@
       <div v-bind:id="id">
         <h4>{{ name }}</h4>
         <div class="usage">{{ patches.length }} of {{ limit }}</div>
-        <ul>
-          <li v-for="patch in patches">
-            <a v-on:click.prevent="showInFinder" v-bind:href="patch.relPath" class="patch">
-              {{ patch.name }}
-            </a>
-          </li>
-        </ul>
+        <transition-group name="flip-list" tag="ul">
+        
+          <template v-for="(packPatches, packName) in packs">
+            <li v-bind:key="packName">
+              <a v-on:click.prevent="showInFinder" v-bind:href="packPatches[0].packDir" class="pack">
+                {{ packName }}
+              </a>
+            </li>
+            <li v-for="patch in packPatches" v-bind:key="patch.relPath">
+              <a v-on:click.prevent="showInFinder" v-bind:href="patch.relPath" class="patch">
+                {{ patch.name }}
+              </a>
+            </li>
+          </template>
+        
+        </transition-group>
       </div>
     </script>
     
