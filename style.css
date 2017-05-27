@@ -28,6 +28,13 @@
   box-sizing: border-box;
 }
 
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 1s;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
+}
+
 /*.blu { color: #698EFF; }
 .grn { color: #04cb81; }
 .wht { color: #FFFFFF; }
@@ -87,14 +94,11 @@ h1 {
 .header .icon {
   float: right;
 }
-.header .icon svg {
+.header .icon img {
   width: 18px;
   height: 18px;
 }
 
-.header .icon.spinner {
-  display: none;
-}
 .header .icon.spinner span {
   margin-right: 5px;
 }

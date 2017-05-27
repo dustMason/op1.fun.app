@@ -15,7 +15,7 @@ const ApiClient = require('./api-client');
 // if not, try to and error out to user if that fails
 
 var email, token, watcher, urlToOpen, mountpoint, patches = [];
-// mountpoint = "/Users/jordan/Documents/OP-1/fakeop1";
+mountpoint = "/Users/jordan/Documents/OP-1/fakeop1";
 
 const api = new ApiClient();
 
@@ -91,12 +91,6 @@ function loadPack(pack) {
     mb.window.webContents.send('finish-download', { pack: pack });
   })
   return result;
-}
-
-function patchCounts() {
-  var counts = { synth: 0, drum: 0, sampler: 0 }
-  patches.forEach(function(p) { counts[p.category]++; });
-  return counts;
 }
 
 function parseUrl(urlStr) {

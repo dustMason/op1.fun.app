@@ -1,61 +1,70 @@
 <html>
   <head>
     <link rel="stylesheet" href="style.css">
+    <script src="vue.js"></script>
   </head>
   <body>
     
-    <div class="disconnected">
-      No OP-1 detected<br>
-      Please connect your OP-1 and put it in disk mode.
+    <div id="app">
+      <component
+        v-bind:is="currentView"
+        v-on:go="goToView"
+        v-bind:patches="patches"
+        v-bind:downloading="downloading"
+      ></component>
     </div>
     
-    <div class="loading"></div>
-    
-    <div class="config">
-      <form action="">
-        <label for="email">Email</label>
-        <input type="text" id="email" name="email">
-        <br>
-        <label for="token">API Token</label>
-        <input type="text" id="token" name="token">
-        <br>
-        <button>Sign In</button>
-      </form>
-    </div>
-    
-    <div class="main">
-      <div class="header">
-        <h1>op1.fun</h1>
-        <div class="icon config-icon">
-          <svg viewBox="0 0 32 32" style="fill:currentcolor"><path d="M14 0 H18 L19 6 L20.707 6.707 L26 3.293 L28.707 6 L25.293 11.293 L26 13 L32 14 V18 L26 19 L25.293 20.707 L28.707 26 L26 28.707 L20.707 25.293 L19 26 L18 32 L14 32 L13 26 L11.293 25.293 L6 28.707 L3.293 26 L6.707 20.707 L6 19 L0 18 L0 14 L6 13 L6.707 11.293 L3.293 6 L6 3.293 L11.293 6.707 L13 6 L14 0 z M16 10 A6 6 0 0 0 16 22 A6 6 0 0 0 16 10"></path></svg>
-        </div>
-        <div class="icon spinner">
-          <span>Downloading</span>
-          <svg width='92px' height='92px' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" class="uil-squares"><rect x="0" y="0" width="100" height="100" fill="none" class="bk"></rect><rect x="15" y="15" width="20" height="20" fill="#000000" class="sq"><animate attributeName="fill" from="#000000" to="#ffffff" repeatCount="indefinite" dur="1s" begin="0s" values="#ffffff;#ffffff;#000000;#000000" keyTimes="0;0.1;0.2;1"></animate></rect><rect x="40" y="15" width="20" height="20" fill="#000000" class="sq"><animate attributeName="fill" from="#000000" to="#ffffff" repeatCount="indefinite" dur="1s" begin="0.125s" values="#ffffff;#ffffff;#000000;#000000" keyTimes="0;0.1;0.2;1"></animate></rect><rect x="65" y="15" width="20" height="20" fill="#000000" class="sq"><animate attributeName="fill" from="#000000" to="#ffffff" repeatCount="indefinite" dur="1s" begin="0.25s" values="#ffffff;#ffffff;#000000;#000000" keyTimes="0;0.1;0.2;1"></animate></rect><rect x="15" y="40" width="20" height="20" fill="#000000" class="sq"><animate attributeName="fill" from="#000000" to="#ffffff" repeatCount="indefinite" dur="1s" begin="0.875s" values="#ffffff;#ffffff;#000000;#000000" keyTimes="0;0.1;0.2;1"></animate></rect><rect x="65" y="40" width="20" height="20" fill="#000000" class="sq"><animate attributeName="fill" from="#000000" to="#ffffff" repeatCount="indefinite" dur="1s" begin="0.375s" values="#ffffff;#ffffff;#000000;#000000" keyTimes="0;0.1;0.2;1"></animate></rect><rect x="15" y="65" width="20" height="20" fill="#000000" class="sq"><animate attributeName="fill" from="#000000" to="#ffffff" repeatCount="indefinite" dur="1s" begin="0.75s" values="#ffffff;#ffffff;#000000;#000000" keyTimes="0;0.1;0.2;1"></animate></rect><rect x="40" y="65" width="20" height="20" fill="#000000" class="sq"><animate attributeName="fill" from="#000000" to="#ffffff" repeatCount="indefinite" dur="1s" begin="0.625s" values="#ffffff;#ffffff;#000000;#000000" keyTimes="0;0.1;0.2;1"></animate></rect><rect x="65" y="65" width="20" height="20" fill="#000000" class="sq"><animate attributeName="fill" from="#000000" to="#ffffff" repeatCount="indefinite" dur="1s" begin="0.5s" values="#ffffff;#ffffff;#000000;#000000" keyTimes="0;0.1;0.2;1"></animate></rect></svg>
-        </div>
-        <div class="clear"></div>
-      </div>
-      <div class="patch-browser">
-        <div id="drum">
-          <h4>Drum</h4>
-          <div class="usage"></div>
-          <ul></ul>
+    <script type="x-template" id="browser">
+      <div className="browser">
+        <div class="header">
+          <h1>op1.fun</h1>
+          <div class="icon config-icon" v-on:click="$emit('go', 'login')">
+            <img src="images/gear.svg" alt="gear">
+          </div>
+          <transition name="fade">
+            <div v-if="downloading" class="icon spinner">
+              <span>{{ downloading }}</span>
+              <img src="images/spinner.svg" alt="spinner">
+            </div>
+          </transition>
           <div class="clear"></div>
         </div>
-        <div id="synth">
-          <h4>Synth</h4>
-          <div class="usage"></div>
-          <ul></ul>
-          <div class="clear"></div>
-        </div>
-        <div id="sampler">
-          <h4>Sampler</h4>
-          <div class="usage"></div>
-          <ul></ul>
-          <div class="clear"></div>
+        <div class="patch-browser">
+          <patch-list v-bind:limit="limits.drum" v-bind:patches="drums" name="Drum" id="drum"></patch-list>
+          <patch-list v-bind:limit="limits.synth" v-bind:patches="synths" name="Synth" id="synth"></patch-list>
+          <patch-list v-bind:limit="limits.sampler" v-bind:patches="samplers" name="Sampler" id="sampler"></patch-list>
         </div>
       </div>
-    </div>
+    </script>
+    
+    <script type="x-template" id="login">
+      <div class="login">
+        <form action="">
+          <label for="email">Email</label>
+          <input v-model="email" type="text">
+          <br>
+          <label for="token">API Token</label>
+          <input v-model="token" type="text">
+          <br>
+          <button v-on:click.prevent="submit">Sign In</button>
+        </form>
+      </div>
+    </script>
+    
+    <script type="x-template" id="patch-list">
+      <div v-bind:id="id">
+        <h4>{{ name }}</h4>
+        <div class="usage">{{ patches.length }} of {{ limit }}</div>
+        <ul>
+          <li v-for="patch in patches">
+            <a v-on:click.prevent="showInFinder" v-bind:href="patch.relPath" class="patch">
+              {{ patch.name }}
+            </a>
+          </li>
+        </ul>
+      </div>
+    </script>
+    
     <script src="front-end.js"></script>
   </body>
 </html>

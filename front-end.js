@@ -1,74 +1,98 @@
 const { ipcRenderer } = require('electron');
-const renderPatches = require('./render-patches');
 const ApiClient = require('./api-client');
 
 const configElm = document.querySelector(".config");
 const api = new ApiClient();
 
-if (api.isLoggedIn()) {
-  // console.log("creds", apiKey, apiEmail);
-} else {
-  showConfig();
+Vue.component('patch-list', {
+  template: '#patch-list',
+  props: ['patches', 'limit', 'name', 'id'],
+  methods: {
+    showInFinder: function(e) {
+      if (e) {
+        ipcRenderer.send('show-in-finder', e.target.getAttribute("href"));
+      }
+    },
+  },
+});
+
+var categoryFilter = function(patches, category) {
+  var filtered = patches.filter((p) => { return p.category === category });
+  return filtered.sort(function(a, b) {
+    var _a = (a.packDir || "").toLowerCase() + a.name.toLowerCase();
+    var _b = (b.packDir || "").toLowerCase() + b.name.toLowerCase();
+    if (_a < _b) { return -1 } else if (_a > _b) { return 1 }
+    return 0;
+  });
 }
 
+var app = new Vue({
+  el: '#app',
+  data: {
+    patches: [],
+    downloading: false,
+    currentView: api.isLoggedIn() ? 'browser' : 'login'
+  },
+  methods: {
+    goToView: function(e) { this.currentView = e; }
+  },
+  components: {
+    
+    //
+    // LOGIN
+    //
+    login: {
+      template: '#login',
+      data: function() {
+        return {
+          email: api.email(),
+          token: api.token()
+        }
+      },
+      methods: {
+        submit: function(e) {
+          // console.log(this);
+          // TODO simple validation on email/token
+          api.logIn(this.email, this.token);
+          this.$emit('go', 'browser');
+        }
+      }
+    },
+    
+    //
+    // BROWSER
+    //
+    browser: {
+      template: '#browser',
+      props: ['patches', 'downloading'],
+      data: function() {
+        return {
+          limits: { drum: 42, synth: 100, sampler: 42 },
+        }
+      },
+      computed: {
+        drums: function() { return categoryFilter(this.patches, 'drum'); },
+        synths: function() { return categoryFilter(this.patches, 'synth'); },
+        samplers: function() { return categoryFilter(this.patches, 'sampler'); }
+      }
+    }
+    
+  }
+  
+});
+
 ipcRenderer.on('render-patches', (event, patches) => {
-  renderPatches(patches);
+  app.patches = patches;
 });
 
 ipcRenderer.on('start-download', (event, message) => {
-  console.log('start-download', message);
-  var note;
   if (message['pack']) {
-    note = "Downloading Pack: " + message.pack.name;
+    app.downloading = "Downloading Pack: " + message.pack.name;
   } else if (message['patch']) {
-    note = "Downloading Patch: " + message.patch.name;
+    app.downloading = "Downloading Patch: " + message.patch.name;
   }
-  showSpinner(note);
 });
 
 ipcRenderer.on('finish-download', (event, message) => {
-  console.log('finish-download', message);
-  hideSpinner();
+  app.downloading = false;
 });
-
-document.querySelector(".patch-browser").addEventListener("click", function(e) {
-  if (e.target.getAttribute("href")) {
-    e.preventDefault();
-    ipcRenderer.send('show-in-finder', e.target.getAttribute("href"));
-  }
-});
-
-document.querySelector(".header .config-icon").addEventListener("click", function(e){
-  showConfig();
-});
-
-configElm.querySelector("form").addEventListener("submit", function(e) {
-  e.preventDefault();
-  var email = configElm.querySelector("#email").value;
-  var token = configElm.querySelector("#token").value;
-  if (email !== '' && token !== '') {
-    api.logIn(email, token);
-    hideConfig();
-  } else {
-    alert("Please enter an email and API token");
-  }
-});
-function showConfig() {
-  configElm.style.display = "block";
-  var email = api.email();
-  if (email) { configElm.querySelector("#email").value = email; }
-  var token = api.token();
-  if (token) { configElm.querySelector("#token").value = token; }
-}
-function hideConfig() { configElm.style.display = "none"; }
-
-const spinner = document.querySelector(".icon.spinner");
-function showSpinner(note) {
-  if (note) {
-    spinner.querySelector("span").textContent = note;
-  } else {
-    spinner.querySelector("span").textContent = "Download";
-  }
-  spinner.style.display = "block";
-}
-function hideSpinner() { spinner.style.display = "none"; }
