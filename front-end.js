@@ -5,21 +5,6 @@ const groupBy = require('./lib/group-by');
 const configElm = document.querySelector(".config");
 const api = new ApiClient();
 
-Vue.component('patch-list', {
-  template: '#patch-list',
-  props: ['patches', 'limit', 'name', 'id'],
-  computed: {
-    packs: function() { return groupBy(this.patches, 'packName') }
-  },
-  methods: {
-    showInFinder: function(e) {
-      if (e) {
-        ipcRenderer.send('show-in-finder', e.target.getAttribute("href"));
-      }
-    },
-  },
-});
-
 var categoryFilter = function(patches, category) {
   var filtered = patches.filter((p) => { return p.category === category });
   return filtered.sort(function(a, b) {
@@ -35,10 +20,12 @@ var app = new Vue({
   data: {
     patches: [],
     downloading: false,
-    currentView: api.isLoggedIn() ? 'browser' : 'login'
+    currentView: api.isLoggedIn() ? 'browser' : 'login',
+    currentListId: 'synth'
   },
   methods: {
-    goToView: function(e) { this.currentView = e; }
+    goToView: function(e) { this.currentView = e },
+    showList: function(e) { this.currentListId = e },
   },
   components: {
     
@@ -68,16 +55,66 @@ var app = new Vue({
     //
     browser: {
       template: '#browser',
-      props: ['patches', 'downloading'],
-      data: function() {
-        return {
-          limits: { drum: 42, synth: 100, sampler: 42 },
-        }
-      },
+      props: ['patches', 'downloading', 'currentListId'],
       computed: {
-        drums: function() { return categoryFilter(this.patches, 'drum'); },
-        synths: function() { return categoryFilter(this.patches, 'synth'); },
-        samplers: function() { return categoryFilter(this.patches, 'sampler'); }
+        filteredPatches: function() {
+          return categoryFilter(this.patches, this.currentListId);
+        },
+      },
+      components: {
+        sideNav: {
+          template: '#side-nav',
+          props: ['patches', 'currentListId'],
+          data: function() {
+            return {
+              limits: { drum: 42, synth: 100, sampler: 42 },
+            }
+          },
+          computed: {
+            navItems: function() {
+              var sub = (cat) => {
+                return categoryFilter(this.patches, cat).length + " of " + this.limits[cat];
+              }
+              return [
+                { id: 'synth', title: 'Synth', subtitle: sub('synth') },
+                { id: 'sampler', title: 'Sampler', subtitle: sub('sampler') },
+                { id: 'drum', title: 'Drum', subtitle: sub('drum') },
+                { id: 'backups', title: 'Backups', subtitle: 'ok' },
+              ]
+              
+            }
+          }
+        },
+        contentArea: {
+          template: "<component :is='currentComponent' :patches='patches' :id='id'></component>",
+          props: ['currentListId', 'patches', 'id'],
+          computed: {
+            currentComponent: function() {
+              return (this.currentListId === 'backups') ? 'backups' : 'patch-list';
+            }
+          },
+          components: {
+            
+            patchList: {
+              template: '#patch-list',
+              props: ['patches', 'id'],
+              computed: {
+                packs: function() { return groupBy(this.patches, 'packName') }
+              },
+              methods: {
+                showInFinder: function(e) {
+                  if (e) {
+                    ipcRenderer.send('show-in-finder', e.target.getAttribute("href"));
+                  }
+                },
+              },
+            },
+            backups: {
+              template: '#backups'
+            }
+            
+          }
+        }
       }
     }
     

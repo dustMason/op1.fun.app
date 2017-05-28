@@ -45,8 +45,8 @@
 .red { color: #FF3A5D; }*/
 
 body {
-  background: #25252c;
-  color: #fff;
+  /*background: #25252c;
+  color: #fff;*/
   width: 100%;
   font-family: Heebo;
   font-weight: 300;
@@ -58,7 +58,7 @@ body {
 }
 
 a {
-  color: #fff;
+  /*color: #fff;*/
   text-decoration: none;
 }
 
@@ -125,14 +125,14 @@ h4,
   border-right: 1px solid rgba(255,255,255,0.2);
 }
 
-.patch-browser {
+/*.patch-browser {
   position: absolute;
   top: 40px;
   left: 0;
   bottom: 0;
   right: 0;
-}
-.patch-browser > div {
+}*/
+/*.patch-browser > div {
   padding-top: 5px;
   position: absolute;
   top: 0;
@@ -144,14 +144,14 @@ h4,
 #sampler { left: 66%; }
 #synth h4, #synth .usage, #synth svg, #synth .pack { color: #698EFF; }
 #drum h4, #drum .usage, #drum svg, #drum .pack { color: #04cb81; }
-#sampler h4, #sampler .usage, #sampler svg, #sampler .pack { color: #ffffff; }
+#sampler h4, #sampler .usage, #sampler svg, #sampler .pack { color: #ffffff; }*/
 
 .usage {
   padding-bottom: 5px;
   border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 
-.patch-browser ul {
+/*.patch-browser ul {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -183,7 +183,6 @@ h4,
   color: #000;
 }
 .patch-browser .pack {
-  /*font-weight: 700;*/
   text-transform: uppercase;
 }
 .patch-browser li a {
@@ -193,7 +192,7 @@ h4,
   white-space: nowrap;
   margin: 0;
   padding: 4px 6px;
-}
+}*/
 
 .clear {
   clear: both;

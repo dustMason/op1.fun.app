@@ -9,8 +9,10 @@
       <component
         v-bind:is="currentView"
         v-on:go="goToView"
+        v-on:showlist="showList"
         v-bind:patches="patches"
         v-bind:downloading="downloading"
+        v-bind:current-list-id="currentListId"
       ></component>
     </div>
     
@@ -30,9 +32,16 @@
           <div class="clear"></div>
         </div>
         <div class="patch-browser">
-          <patch-list v-bind:limit="limits.drum" v-bind:patches="drums" name="Drum" id="drum"></patch-list>
-          <patch-list v-bind:limit="limits.synth" v-bind:patches="synths" name="Synth" id="synth"></patch-list>
-          <patch-list v-bind:limit="limits.sampler" v-bind:patches="samplers" name="Sampler" id="sampler"></patch-list>
+          <side-nav
+            :patches="patches"
+            :currentListId="currentListId"
+            @showlist="$emit('showlist', $event)"
+          ></side-nav>
+          <content-area
+            :currentListId="currentListId"
+            :patches="filteredPatches"
+            :id="currentListId"
+          ></content-area>
         </div>
       </div>
     </script>
@@ -53,10 +62,7 @@
     
     <script type="x-template" id="patch-list">
       <div v-bind:id="id">
-        <h4>{{ name }}</h4>
-        <div class="usage">{{ patches.length }} of {{ limit }}</div>
         <transition-group name="flip-list" tag="ul">
-        
           <template v-for="(packPatches, packName) in packs">
             <li v-bind:key="packName">
               <a v-on:click.prevent="showInFinder" v-bind:href="packPatches[0].packDir" class="pack">
@@ -69,9 +75,25 @@
               </a>
             </li>
           </template>
-        
         </transition-group>
       </div>
+    </script>
+    
+    <script type="x-template" id="backups">
+      <div>
+        Hi this is backups
+      </div>
+    </script>
+    
+    <script type="x-template" id="side-nav">
+      <ul class="side-nav">
+        <li v-for="item in navItems">
+          <a v-on:click.prevent="$emit('showlist', item.id)" v-bind:href="item.title.toLowerCase()">
+            <h3 v-bind:class="item.id">{{ item.title }}</h3>
+            <span>{{ item.subtitle }}</span>
+          </a>
+        </li>
+      </ul>
     </script>
     
     <script src="front-end.js"></script>
