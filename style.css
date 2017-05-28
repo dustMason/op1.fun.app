@@ -1,3 +1,13 @@
+:root {
+  --blu: #698EFF;
+  --grn: #04cb81;
+  --wht: #FFFFFF;
+  --red: #FF3A5D;
+  --dark-gray: #25252c;
+  --lt-gray: #caced6;
+  --blk: #393a45;
+}
+
 @font-face {
   font-family: 'Heebo';
   src: url('fonts/Heebo-Thin.ttf') format('truetype');
@@ -7,6 +17,11 @@
   font-family: 'Heebo';
   src: url('fonts/Heebo-Light.ttf') format('truetype');
   font-weight: 300;
+}
+@font-face {
+  font-family: 'Heebo';
+  src: url('fonts/Heebo-Medium.ttf') format('truetype');
+  font-weight: 500;
 }
 @font-face {
   font-family: 'Heebo';
@@ -35,22 +50,13 @@
   opacity: 0;
 }
 
-.flip-list-move {
-  transform: 1s;
-}
-
-/*.blu { color: #698EFF; }
-.grn { color: #04cb81; }
-.wht { color: #FFFFFF; }
-.red { color: #FF3A5D; }*/
-
 body {
-  /*background: #25252c;
-  color: #fff;*/
+  background: var(--dark-gray);
+  color: var(--lt-gray);
   width: 100%;
   font-family: Heebo;
   font-weight: 300;
-  font-size: 14px;
+  font-size: 13px;
   overflow-x: hidden;
   padding: 10px 0;
   margin: 0;
@@ -58,7 +64,7 @@ body {
 }
 
 a {
-  /*color: #fff;*/
+  color: var(--lt-gray);
   text-decoration: none;
 }
 
@@ -68,19 +74,6 @@ h4 {
   text-transform: uppercase;
   font-weight: 100;
   font-size: 18px;
-}
-
-.loading,
-.config,
-.disconnected {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  display: none;
-  background: #333;
-  z-index: 2;
 }
 
 h1 {
@@ -116,83 +109,115 @@ h4,
 }
 
 .over-limit {
-  color: #FF3A5D;
+  color: var(--red);
   font-weight: bold;
 }
 
-#drum > ul,
-#synth > ul {
-  border-right: 1px solid rgba(255,255,255,0.2);
-}
-
-/*.patch-browser {
+.browser {
   position: absolute;
-  top: 40px;
+  top: 39px;
   left: 0;
   bottom: 0;
   right: 0;
-}*/
-/*.patch-browser > div {
-  padding-top: 5px;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 33%;
 }
-#drum { left: 0; }
-#synth { left: 33%; }
-#sampler { left: 66%; }
-#synth h4, #synth .usage, #synth svg, #synth .pack { color: #698EFF; }
-#drum h4, #drum .usage, #drum svg, #drum .pack { color: #04cb81; }
-#sampler h4, #sampler .usage, #sampler svg, #sampler .pack { color: #ffffff; }*/
-
-.usage {
-  padding-bottom: 5px;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
-}
-
-/*.patch-browser ul {
+.browser ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
-.patch-browser > div > ul {
+.browser-content {
   position: absolute;
-  overflow-y: scroll;
-  left: 0;
-  right: 0;
+  top: 0;
   bottom: 0;
-  top: 47px;
+  left: 150px;
+  right: 0;
+  overflow-y: scroll;
+  overflow-x: hidden;
 }
-.patch-browser ul ul a {
-  padding-left: 25px;
+.side-nav {
+  position: absolute;
+  left: 0;
+  width: 150px;
+  bottom: 0;
+  top: 0;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  border-right: 1px solid rgba(255,255,255,0.2);
 }
-
-.patch-browser li {
+.side-nav li {
+  padding: 0;
   margin: 0;
+}
+.side-nav a {
+  display: block;
+  padding: 15px 20px;
+  transition: background 0.2s;
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
-.patch-browser li svg {
-  width: 15px;
-  height: 15px;
-  margin: 0 5px -2px 0;
-}
-
-.patch-browser a:hover {
-  background: #fff;
-  color: #000;
-}
-.patch-browser .pack {
+.side-nav h3 {
+  padding: 0;
+  margin: 0;
+  font-weight: 100;
+  font-size: 20px;
   text-transform: uppercase;
 }
-.patch-browser li a {
+.side-nav .active,
+.side-nav .active h3 {
+  color: var(--wht);
+}
+
+.synth { color: var(--blu); }
+.active.synth { background: var(--blu); }
+.drum { color: var(--grn); }
+.active.drum { background: var(--grn); }
+.sampler { color: var(--wht); }
+
+.active.sampler {
+  color: var(--blk);
+  background: var(--wht);
+}
+.active.sampler h3 {
+  color: var(--blk);
+}
+
+.backups { color: var(--red); }
+.active.backups { background: var(--red); }
+
+#synth .pack, #synth img { color: var(--blu); }
+#drum .pack, #drum img { color: var(--grn); }
+#sampler .pack, #sampler img { color: var(--wht); }
+
+.patch-list li svg {
+  width: 15px;
+  height: 15px;
+  margin: 0 6px -2px 0;
+}
+
+.patch-list a:hover,
+.patch-list a:hover .pack {
+  background: var(--lt-gray);
+  color: var(--blk) !important;
+}
+
+.patch-list a {
   text-overflow: ellipsis;
   overflow: hidden;
   display: block;
   white-space: nowrap;
   margin: 0;
-  padding: 4px 6px;
-}*/
+  padding: 4px 6px 4px 35px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.patch-list a.pack {
+  text-transform: uppercase;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 6px 9px;
+}
+.patch-list .root a {
+  padding-left: 9px;
+}
 
 .clear {
   clear: both;

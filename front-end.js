@@ -8,8 +8,9 @@ const api = new ApiClient();
 var categoryFilter = function(patches, category) {
   var filtered = patches.filter((p) => { return p.category === category });
   return filtered.sort(function(a, b) {
-    var _a = (a.packDir || "") + a.name.toLowerCase();
-    var _b = (b.packDir || "") + b.name.toLowerCase();
+    // "/000" makes root level patches sort to the top
+    var _a = (a.packDir || "/000") + a.name.toLowerCase();
+    var _b = (b.packDir || "/000") + b.name.toLowerCase();
     if (_a < _b) { return -1 } else if (_a > _b) { return 1 }
     return 0;
   });

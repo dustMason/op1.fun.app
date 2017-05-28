@@ -7,17 +7,31 @@
     
     <div id="app">
       <component
-        v-bind:is="currentView"
-        v-on:go="goToView"
-        v-on:showlist="showList"
-        v-bind:patches="patches"
-        v-bind:downloading="downloading"
-        v-bind:current-list-id="currentListId"
+        :is="currentView"
+        :patches="patches"
+        :downloading="downloading"
+        :current-list-id="currentListId"
+        @go="goToView"
+        @showlist="showList"
       ></component>
     </div>
     
+    <script type="x-template" id="login">
+      <div class="login">
+        <form action="" @submit.prevent="submit">
+          <label for="email">Email</label>
+          <input v-model="email" type="text">
+          <br>
+          <label for="token">API Token</label>
+          <input v-model="token" type="text">
+          <br>
+          <button>Sign In</button>
+        </form>
+      </div>
+    </script>
+    
     <script type="x-template" id="browser">
-      <div className="browser">
+      <div class="app-main">
         <div class="header">
           <h1>op1.fun</h1>
           <div class="icon config-icon" v-on:click="$emit('go', 'login')">
@@ -31,51 +45,40 @@
           </transition>
           <div class="clear"></div>
         </div>
-        <div class="patch-browser">
+        <div class="browser">
           <side-nav
             :patches="patches"
             :currentListId="currentListId"
             @showlist="$emit('showlist', $event)"
           ></side-nav>
-          <content-area
-            :currentListId="currentListId"
-            :patches="filteredPatches"
-            :id="currentListId"
-          ></content-area>
+          <div class="browser-content">
+            <content-area
+              :currentListId="currentListId"
+              :patches="filteredPatches"
+              :id="currentListId"
+            ></content-area>
+          </div>
         </div>
       </div>
     </script>
     
-    <script type="x-template" id="login">
-      <div class="login">
-        <form action="">
-          <label for="email">Email</label>
-          <input v-model="email" type="text">
-          <br>
-          <label for="token">API Token</label>
-          <input v-model="token" type="text">
-          <br>
-          <button v-on:click.prevent="submit">Sign In</button>
-        </form>
-      </div>
-    </script>
-    
     <script type="x-template" id="patch-list">
-      <div v-bind:id="id">
-        <transition-group name="flip-list" tag="ul">
-          <template v-for="(packPatches, packName) in packs">
-            <li v-bind:key="packName">
-              <a v-on:click.prevent="showInFinder" v-bind:href="packPatches[0].packDir" class="pack">
-                {{ packName }}
-              </a>
-            </li>
-            <li v-for="patch in packPatches" v-bind:key="patch.relPath">
-              <a v-on:click.prevent="showInFinder" v-bind:href="patch.relPath" class="patch">
-                {{ patch.name }}
-              </a>
-            </li>
-          </template>
-        </transition-group>
+      <div :id="id" class="patch-list">
+        <template v-for="(packPatches, packName) in packs">
+          <li :key="packName" v-if="packName !== 'null'">
+            <a @click.prevent="showInFinder" :href="packPatches[0].packDir" class="pack">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="currentcolor">
+                <path d="M0 4 L0 28 L32 28 L32 8 L16 8 L12 4 z" vector-effect="non-scaling-stroke"></path>
+              </svg>
+              {{ packName }}
+            </a>
+          </li>
+          <li v-for="patch in packPatches" :key="patch.relPath" :class="{ root: packName === 'null' }">
+            <a @click.prevent="showInFinder" :href="patch.relPath" class="patch">
+              {{ patch.name }}
+            </a>
+          </li>
+        </template>
       </div>
     </script>
     
@@ -88,7 +91,7 @@
     <script type="x-template" id="side-nav">
       <ul class="side-nav">
         <li v-for="item in navItems">
-          <a v-on:click.prevent="$emit('showlist', item.id)" v-bind:href="item.title.toLowerCase()">
+          <a @click.prevent="$emit('showlist', item.id)" :href="item.title.toLowerCase()" :class="[{ active: (item.id === currentListId) }, item.id ]">
             <h3 v-bind:class="item.id">{{ item.title }}</h3>
             <span>{{ item.subtitle }}</span>
           </a>
