@@ -129,7 +129,7 @@ h4,
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 150px;
+  left: 200px;
   right: 0;
   overflow-y: scroll;
   overflow-x: hidden;
@@ -137,7 +137,7 @@ h4,
 .side-nav {
   position: absolute;
   left: 0;
-  width: 150px;
+  width: 200px;
   bottom: 0;
   top: 0;
   overflow-y: scroll;
@@ -147,6 +147,9 @@ h4,
 .side-nav li {
   padding: 0;
   margin: 0;
+}
+.side-nav svg {
+  height: 14px;
 }
 .side-nav a {
   display: block;
@@ -164,6 +167,9 @@ h4,
 .side-nav .active,
 .side-nav .active h3 {
   color: var(--wht);
+}
+.side-nav .active svg {
+  fill: var(--wht);
 }
 
 .synth { color: var(--blu); }
@@ -190,7 +196,9 @@ h4,
 .patch-list li svg {
   width: 15px;
   height: 15px;
-  margin: 0 6px -2px 0;
+  margin: 0 6px 0 0;
+  position: relative;
+  top: 2px;
 }
 
 .patch-list a:hover,

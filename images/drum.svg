@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 16.308 18.638"
+ xml:space="preserve">
+<g>
+	<circle style="fill:none;stroke:#63C087;stroke-width:2;" cx="8.154" cy="8.154" r="7.154"/>
+	<path style="fill:#63C087;stroke:#63C087;" d="M9.571,9.501c0,0.782-0.635,1.417-1.417,1.417s-1.416-0.705-1.416-1.487
+		s0.634-1.346,1.416-1.346C8.936,8.085,9.571,8.719,9.571,9.501z"/>
+	<line style="fill:none;stroke:#63C087;stroke-width:2;" x1="8.154" y1="18.638" x2="8.154" y2="9.572"/>
+</g>
+</svg>
