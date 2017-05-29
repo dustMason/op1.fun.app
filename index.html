@@ -6,26 +6,40 @@
   <body>
     
     <div id="app">
-      <component
-        :is="currentView"
-        :patches="patches"
-        :downloading="downloading"
-        :current-list-id="currentListId"
-        @go="goToView"
-        @showlist="showList"
-      ></component>
+      <transition name="flop">
+        <component
+          :is="currentView"
+          :patches="patches"
+          :downloading="downloading"
+          :current-list-id="currentListId"
+          @go="goToView"
+          @showlist="showList"
+        ></component>
+      </transition>
     </div>
     
     <script type="x-template" id="login">
       <div class="login">
-        <form action="" @submit.prevent="submit">
-          <label for="email">Email</label>
-          <input v-model="email" type="text">
-          <br>
-          <label for="token">API Token</label>
-          <input v-model="token" type="text">
-          <br>
-          <button>Sign In</button>
+      
+        <div class="intro">
+          <img src="images/op1.svg" alt="op1"/>
+          <h1>op1.fun.app</h1>
+          <h5>v 1.0</h5>
+        </div>
+      
+        <form @submit.prevent="submit">
+          <div class="field">
+            <label for="email">Email</label>
+            <input v-model="email" type="text">
+          </div>
+          <div class="field">
+            <label for="token">API Token</label>
+            <input v-model="token" type="text">
+            <div class="hint">
+              Find your API token on your op1.fun profile page
+            </div>
+          </div>
+          <button>Log In</button>
         </form>
       </div>
     </script>

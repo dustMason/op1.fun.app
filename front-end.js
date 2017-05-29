@@ -80,7 +80,7 @@ var app = new Vue({
                 { id: 'synth', title: 'Synth', subtitle: sub('synth') },
                 { id: 'drum', title: 'Drum', subtitle: sub('drum') },
                 { id: 'sampler', title: 'Sampler', subtitle: sub('sampler') },
-                { id: 'backups', title: 'Backups', subtitle: 'ok' },
+                // { id: 'backups', title: 'Backups', subtitle: 'ok' },
               ]
             }
           }

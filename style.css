@@ -44,11 +44,21 @@
 }
 
 .fade-enter-active, .fade-leave-active {
-  transition: opacity 1s;
+  transition: opacity .3s ease;
 }
 .fade-enter, .fade-leave-to {
   opacity: 0;
 }
+
+.flop-enter-active, .flop-leave-active {
+  transition: all 1s ease;
+}
+.flop-enter, .flop-leave-to {
+  /*transform: rotate3d(0,1,0,90deg);*/
+  opacity: 0;
+  transform: translateX(50px);
+}
+
 
 body {
   background: var(--dark-gray);
@@ -58,7 +68,8 @@ body {
   font-weight: 300;
   font-size: 13px;
   overflow-x: hidden;
-  padding: 10px 0;
+  /*padding: 10px 0;*/
+  padding: 0;
   margin: 0;
   line-height: 18px;
 }
@@ -79,9 +90,94 @@ h4 {
 h1 {
   font-size: 14px;
 }
+
+.field {
+  padding-bottom: 20px;
+}
+label {
+  font-size: 14px;
+  text-transform: uppercase;
+  display: block;
+}
+input[type="text"] {
+  background: #484853;
+  color: var(--lt-gray);
+  font-size: 14px;
+  padding: 5px 9px;
+  width: 100%;
+  display: block;
+  border: 0;
+  border-radius: 4px;
+  margin: 2px 0;
+}
+
+button {
+  background: none;
+  font-size: 20px;
+  text-transform: uppercase;
+  color: var(--grn);
+  padding: 10px 30px;
+  border: 3px solid var(--grn);
+  font-family: Heebo;
+  font-weight: 300;
+  transition: all 0.3s ease;
+}
+button:hover {
+  background: var(--grn);
+  color: var(--blk);
+}
+
+/*
+// Login
+*/
+.login {
+  position: absolute;
+  top: 50px;
+  left: 50px;
+  bottom: 50px;
+  right: 50px;
+}
+.login h1 {
+  font-size: 23px;
+  margin: 10px 0;
+  padding: 0;
+}
+.login h5 {
+  font-size: 13px;
+  font-weight: 300;
+  margin: 0;
+  padding: 0;
+}
+.login .intro {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+}
+.login .intro img {
+  width: 108px;
+}
+.login form {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  bottom: 0;
+  right: 0;
+}
+
+/*
+// Browser
+*/
+
 .header {
-  padding: 0 10px 10px 10px;
+  padding: 10px 20px;
   border-bottom: 1px solid rgba(255,255,255,0.2);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 39px;
 }
 .header h1 {
   float: left;
