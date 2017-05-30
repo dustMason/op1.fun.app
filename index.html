@@ -12,35 +12,56 @@
           :patches="patches"
           :downloading="downloading"
           :current-list-id="currentListId"
+          :login-error="loginError"
+          :is-logged-in="isLoggedIn"
           @go="goToView"
           @showlist="showList"
+          @error="setLoginError"
+          @log-out="setLoggedInFalse"
+          @log-in="setLoggedInTrue"
         ></component>
       </transition>
     </div>
     
     <script type="x-template" id="login">
-      <div class="login">
-      
-        <div class="intro">
-          <img src="images/op1.svg" alt="op1"/>
-          <h1>op1.fun.app</h1>
-          <h5>v 1.0</h5>
+      <div>
+        <div v-if="isLoggedIn" class="back" @click="$emit('go', 'browser')">
+          <span>&larr;</span> Back
         </div>
-      
-        <form @submit.prevent="submit">
-          <div class="field">
-            <label for="email">Email</label>
-            <input v-model="email" type="text">
+        
+        <div class="login">
+          <div class="intro">
+            <img src="images/op1.svg" alt="op1"/>
+            <h1>op1.fun.app</h1>
+            <h5>v 1.0</h5>
           </div>
-          <div class="field">
-            <label for="token">API Token</label>
-            <input v-model="token" type="text">
-            <div class="hint">
-              Find your API token on your op1.fun profile page
+          
+          <form v-if="isLoggedIn" @submit.prevent="logOut">
+            <div class="field">
+              <label for="email">Logged in as</label>
+              <div>{{ email }}</div>
             </div>
-          </div>
-          <button>Log In</button>
-        </form>
+            <button>Log Out</button>
+          </form>
+          
+          <form v-else @submit.prevent="logIn">
+            <div class="field">
+              <label for="email">Email</label>
+              <input v-model="email" type="text">
+            </div>
+            <div class="field">
+              <label for="password">Password</label>
+              <input v-model="password" type="password">
+            </div>
+            
+            <div v-if="loginError !== ''" class="error">
+              {{loginError}}
+            </div>
+            
+            <button>Log In</button>
+          </form>
+          
+        </div>
       </div>
     </script>
     
@@ -48,7 +69,7 @@
       <div class="app-main">
         <div class="header">
           <h1>op1.fun</h1>
-          <div class="icon config-icon" v-on:click="$emit('go', 'login')">
+          <div class="icon config-icon" @click="$emit('go', 'login')">
             <img src="images/gear.svg" alt="gear">
           </div>
           <transition name="fade">

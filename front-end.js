@@ -22,11 +22,16 @@ var app = new Vue({
     patches: [],
     downloading: false,
     currentView: api.isLoggedIn() ? 'browser' : 'login',
-    currentListId: 'synth'
+    currentListId: 'synth',
+    loginError: '',
+    isLoggedIn: api.isLoggedIn()
   },
   methods: {
     goToView: function(e) { this.currentView = e },
     showList: function(e) { this.currentListId = e },
+    setLoginError: function(error) { this.loginError = error; },
+    setLoggedInFalse: function() { this.isLoggedIn = false; },
+    setLoggedInTrue: function() { this.isLoggedIn = true; }
   },
   components: {
     
@@ -38,15 +43,26 @@ var app = new Vue({
       data: function() {
         return {
           email: api.email(),
-          token: api.token()
+          password: ''
         }
       },
+      props: ['loginError', 'isLoggedIn'],
       methods: {
-        submit: function(e) {
-          // console.log(this);
-          // TODO simple validation on email/token
-          api.logIn(this.email, this.token);
-          this.$emit('go', 'browser');
+        logIn: function(e) {
+          api.logIn(this.email, this.password, (res) => {
+            if (res.error) {
+              this.$emit('error', res.error);
+            } else {
+              this.$emit('error', '');
+              this.$emit('log-in');
+              this.$emit('go', 'browser');
+            }
+          });
+        },
+        logOut: function() {
+          api.logOut(() => {
+            this.$emit('log-out');
+          });
         }
       }
     },

@@ -16,10 +16,36 @@ class ApiClient {
     return this.config.get('email');
   }
   
-  logIn(email, token) {
-    // TODO this should accept a password instead and make the call to get token
+  logIn(email, password, callback) {
+    var me = this;
     this.config.set('email', email);
-    this.config.set('token', token);
+    var req = https.request({
+      method: 'POST',
+      host: 'api.op1.fun',
+      path: '/v1/api_token',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    }, function(res) {
+      var body = '';
+      res.on('data', function(d) { body += d; });
+      res.on('end', function() {
+        var res = JSON.parse(body);
+        if (res.api_token) {
+          me.config.set('token', res.api_token);
+        }
+        callback(res);
+      });
+    });
+    req.write(JSON.stringify({ email: email, password: password }));
+    req.end();
+  }
+  
+  logOut(callback) {
+    this.config.set('email', null);
+    this.config.set('token', null);
+    callback();
   }
   
   isLoggedIn() {

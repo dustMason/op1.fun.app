@@ -99,7 +99,8 @@ label {
   text-transform: uppercase;
   display: block;
 }
-input[type="text"] {
+input[type="text"],
+input[type="password"] {
   background: #484853;
   color: var(--lt-gray);
   font-size: 14px;
@@ -109,6 +110,12 @@ input[type="text"] {
   border: 0;
   border-radius: 4px;
   margin: 2px 0;
+}
+
+.error {
+  padding-bottom: 10px;
+  color: var(--red);
+  font-weight: 700;
 }
 
 button {
@@ -136,6 +143,18 @@ button:hover {
   left: 50px;
   bottom: 50px;
   right: 50px;
+}
+.back {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 100px;
+  height: 30px;
+  font-weight: 100;
+  text-transform: uppercase;
+}
+.back span {
+  margin-top: -2px;
 }
 .login h1 {
   font-size: 23px;
