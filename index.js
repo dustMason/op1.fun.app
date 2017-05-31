@@ -7,9 +7,7 @@ const Url = require('url');
 const OP1Patch = require('./op1-patch');
 const ApiClient = require('./api-client');
 const api = new ApiClient();
-
-// for dev
-// require('electron-context-menu')();
+const path = require('path');
 
 var email,
     token,
@@ -25,11 +23,15 @@ var email,
 const mb = menubar({
   preloadWindow: true,
   width: 600,
-  icon: 'icon.png'
+  icon: path.join(__dirname, 'icon.png')
 });
 
+mb.icon = path.join(__dirname, 'op1fun.icns');
+
 mb.on('ready', function ready() {
-  ensureConnected();
+  ensureConnected().catch(function(reason) {
+    // noop
+  });
 });
 
 mb.app.on('open-url', function(e, urlStr) {
@@ -46,13 +48,15 @@ mb.app.on('open-url', function(e, urlStr) {
   };
 });
 
-mb.on('after-create-window', function() {
-  mb.window.openDevTools();
-});
+// mb.on('after-create-window', function() {
+//   mb.window.openDevTools();
+// });
 
 mb.on('after-show', function show() {
   if (ensureLoggedIn()) {
-    ensureConnected();
+    ensureConnected().catch(function(reason) {
+      // noop
+    });
   };
 });
 
@@ -61,7 +65,9 @@ ipcMain.on('show-in-finder', (event, arg) => {
 });
 
 ipcMain.on('mount-op1', (event, arg) => {
-  ensureConnected();
+  ensureConnected().catch(function(reason) {
+    // noop
+  });
 });
 
 function loadPatch(patch, packDir) {
@@ -130,6 +136,8 @@ function ensureConnected() {
       settingUpWatcher = false;
       return Promise.reject();
     });
+  } else {
+    return Promise.reject();
   }
 }
 

@@ -1,6 +1,10 @@
-const { ipcRenderer } = require('electron');
+const { ipcRenderer, webFrame } = require('electron');
 const ApiClient = require('./api-client');
 const groupBy = require('./lib/group-by');
+
+// disable zoom
+webFrame.setVisualZoomLevelLimits(1, 1)
+webFrame.setLayoutZoomLevelLimits(0, 0);
 
 const api = new ApiClient();
 

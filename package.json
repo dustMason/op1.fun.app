@@ -6,14 +6,13 @@
   "dependencies": {
     "chokidar": "^1.7.0",
     "drivelist": "^5.0.21",
+    "electron": "^1.6.8",
     "electron-config": "^1.0.0",
     "electron-dl": "^1.9.0",
     "jsonapi-datastore": "niksy/jsonapi-datastore",
     "menubar": "^5.2.3"
   },
   "devDependencies": {
-    "electron": "^1.6.8",
-    "electron-context-menu": "^0.9.1",
     "electron-rebuild": "^1.5.11"
   },
   "scripts": {
