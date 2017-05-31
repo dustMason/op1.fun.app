@@ -14,11 +14,13 @@
           :current-list-id="currentListId"
           :login-error="loginError"
           :is-logged-in="isLoggedIn"
+          :connected="connected"
           @go="goToView"
           @showlist="showList"
           @error="setLoginError"
           @log-out="setLoggedInFalse"
           @log-in="setLoggedInTrue"
+          @mount-op1="mountOP1"
         ></component>
       </transition>
     </div>
@@ -88,10 +90,12 @@
           ></side-nav>
           <div class="browser-content">
             <content-area
+              v-if="connected"
               :currentListId="currentListId"
               :patches="filteredPatches"
               :id="currentListId"
             ></content-area>
+            <disconnected v-else @mount-op1="$emit('mount-op1')"></disconnected>
           </div>
         </div>
       </div>
@@ -122,6 +126,14 @@
     <script type="x-template" id="backups">
       <div>
         Hi this is backups
+      </div>
+    </script>
+    
+    <script type="x-template" id="disconnected">
+      <div class="disconnected">
+        <img src="images/op1-com.svg" alt="COM"/>
+        <h2>Please connect your OP-1 and put it in disk mode.</h2>
+        <button @click="$emit('mount-op1')">Retry</button>
       </div>
     </script>
     

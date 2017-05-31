@@ -2,7 +2,6 @@ const { ipcRenderer } = require('electron');
 const ApiClient = require('./api-client');
 const groupBy = require('./lib/group-by');
 
-const configElm = document.querySelector(".config");
 const api = new ApiClient();
 
 var categoryFilter = function(patches, category) {
@@ -24,14 +23,16 @@ var app = new Vue({
     currentView: api.isLoggedIn() ? 'browser' : 'login',
     currentListId: 'synth',
     loginError: '',
-    isLoggedIn: api.isLoggedIn()
+    isLoggedIn: api.isLoggedIn(),
+    connected: false
   },
   methods: {
     goToView: function(e) { this.currentView = e },
     showList: function(e) { this.currentListId = e },
     setLoginError: function(error) { this.loginError = error; },
     setLoggedInFalse: function() { this.isLoggedIn = false; },
-    setLoggedInTrue: function() { this.isLoggedIn = true; }
+    setLoggedInTrue: function() { this.isLoggedIn = true; },
+    mountOP1: function() { ipcRenderer.send('mount-op1'); }
   },
   components: {
     
@@ -72,7 +73,7 @@ var app = new Vue({
     //
     browser: {
       template: '#browser',
-      props: ['patches', 'downloading', 'currentListId'],
+      props: ['patches', 'downloading', 'currentListId', 'connected'],
       computed: {
         filteredPatches: function() {
           return categoryFilter(this.patches, this.currentListId);
@@ -130,6 +131,9 @@ var app = new Vue({
             }
             
           }
+        },
+        disconnected: {
+          template: '#disconnected'
         }
       }
     }
@@ -140,6 +144,17 @@ var app = new Vue({
 
 ipcRenderer.on('render-patches', (event, patches) => {
   app.patches = patches;
+});
+
+ipcRenderer.on('op1-connected', (event, value) => {
+  app.connected = value;
+});
+
+ipcRenderer.on('show-login', (event, data) => {
+  app.currentView = 'login';
+  if (data.message) {
+    app.loginError = data.message;
+  }
 });
 
 ipcRenderer.on('start-download', (event, message) => {

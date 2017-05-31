@@ -249,6 +249,24 @@ h4,
   overflow-y: scroll;
   overflow-x: hidden;
 }
+
+.disconnected {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+.disconnected img {
+  margin-top: 50px;
+  width: 240px;
+}
+.disconnected h2 {
+  font-size: 16px;
+  font-weight: 100;
+}
+
 .side-nav {
   position: absolute;
   left: 0;
