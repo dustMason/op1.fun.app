@@ -54,7 +54,6 @@
   transition: all 1s ease;
 }
 .flop-enter, .flop-leave-to {
-  /*transform: rotate3d(0,1,0,90deg);*/
   opacity: 0;
   transform: translateX(50px);
 }
@@ -68,7 +67,6 @@ body {
   font-weight: 300;
   font-size: 13px;
   overflow-x: hidden;
-  /*padding: 10px 0;*/
   padding: 0;
   margin: 0;
   line-height: 18px;

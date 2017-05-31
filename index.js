@@ -24,7 +24,8 @@ var email,
 
 const mb = menubar({
   preloadWindow: true,
-  width: 600
+  width: 600,
+  icon: 'icon.png'
 });
 
 mb.on('ready', function ready() {
@@ -82,9 +83,7 @@ function loadPatch(patch, packDir) {
       mb.window.webContents.send('finish-download', { patch: patch });
     });
   }
-  return result
-  // .then(dl => console.log(dl.getSavePath()))
-  // .catch(console.error);
+  return result;
 }
 
 function loadPack(pack) {
