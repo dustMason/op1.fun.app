@@ -11,7 +11,15 @@ const api = new ApiClient();
 // for dev
 // require('electron-context-menu')();
 
-var email, token, watcher, urlToOpen, mountpoint, patches = [], mounted = false;
+var email,
+    token,
+    watcher,
+    urlToOpen,
+    mountpoint,
+    patches = [],
+    mounted = false,
+    settingUpWatcher = false;
+
 // mountpoint = "/Users/jordan/Documents/OP-1/fakeop1";
 
 const mb = menubar({
@@ -20,7 +28,7 @@ const mb = menubar({
 });
 
 mb.on('ready', function ready() {
-  watchOP1();
+  ensureConnected();
 });
 
 mb.app.on('open-url', function(e, urlStr) {
@@ -110,15 +118,18 @@ function ensureLoggedIn() {
 }
 
 function ensureConnected() {
-  var result = Promise.resolve(true);
   if (mounted) {
     mb.window.webContents.send('op1-connected', true);
-    return result;
-  } else {
-    return result.then(watchOP1).then(function() {
+    return Promise.resolve(true);
+  } else if (!settingUpWatcher) {
+    settingUpWatcher = true;
+    return watchOP1().then(function() {
       mb.window.webContents.send('op1-connected', true);
+      settingUpWatcher = false;
     }, function(error) {
       mb.window.webContents.send('op1-connected', false);
+      settingUpWatcher = false;
+      return Promise.reject();
     });
   }
 }
@@ -136,14 +147,15 @@ function watchOP1() {
       for (var i = 0; i < drives.length; i++) {
         if (drives[i].description.indexOf("OP-1") > -1) {
           mountpoint = drives[i].mountpoints[0].path;
-          mounted = true;
           break;
         }
       }
       
       if (!mountpoint) {
         mounted = false;
-        reject("OP-1 not found");
+        return reject("OP-1 not found");
+      } else {
+        mounted = true;
       }
       
       watcher = chokidar.watch(mountpoint, {

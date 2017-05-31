@@ -211,11 +211,22 @@ button:hover {
   height: 18px;
 }
 
-.header .icon.spinner span {
-  margin-right: 5px;
+.header .icon.spinner {
+  position: absolute;
+  top: 0;
+  right: 52px;
+  height: 39px;
+  text-align: right;
+  float: none;
 }
-.header .icon.spinner svg {
-  margin-right: 5px;
+.header .icon.spinner span {
+  line-height: 39px;
+}
+.header .icon.spinner img {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  top: 7px;
 }
 
 h4,
@@ -259,12 +270,13 @@ h4,
   text-align: center;
 }
 .disconnected img {
-  margin-top: 50px;
+  margin-top: 85px;
   width: 240px;
 }
 .disconnected h2 {
   font-size: 16px;
   font-weight: 100;
+  margin-bottom: 15px;
 }
 
 .side-nav {

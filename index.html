@@ -95,7 +95,10 @@
               :patches="filteredPatches"
               :id="currentListId"
             ></content-area>
-            <disconnected v-else @mount-op1="$emit('mount-op1')"></disconnected>
+            <disconnected
+              v-else
+              @mount-op1="$emit('mount-op1')"
+            ></disconnected>
           </div>
         </div>
       </div>
