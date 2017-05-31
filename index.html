@@ -21,14 +21,20 @@
           @log-out="setLoggedInFalse"
           @log-in="setLoggedInTrue"
           @mount-op1="mountOP1"
+          @show-popup-menu="showPopupMenu"
         ></component>
       </transition>
     </div>
     
     <script type="x-template" id="login">
       <div>
-        <div v-if="isLoggedIn" class="back" @click="$emit('go', 'browser')">
-          <span>&larr;</span> Back
+        <div class="header">
+          <div v-if="isLoggedIn" class="back" @click="$emit('go', 'browser')">
+            <span>&larr;</span> Back
+          </div>
+          <div class="icon config-icon" @click="$emit('show-popup-menu')">
+            <img src="images/gear.svg" alt="gear">
+          </div>
         </div>
         
         <div class="login">
@@ -71,7 +77,7 @@
       <div class="app-main">
         <div class="header">
           <h1>op1.fun</h1>
-          <div class="icon config-icon" @click="$emit('go', 'login')">
+          <div class="icon config-icon" @click="$emit('show-popup-menu')">
             <img src="images/gear.svg" alt="gear">
           </div>
           <transition name="fade">

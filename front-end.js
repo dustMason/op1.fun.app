@@ -1,12 +1,22 @@
-const { ipcRenderer, webFrame } = require('electron');
+const { ipcRenderer, webFrame, remote } = require('electron');
+const { Menu, MenuItem } = remote;
 const ApiClient = require('./api-client');
 const groupBy = require('./lib/group-by');
+const api = new ApiClient();
+
+var app;
+    
+const browserMenu = new Menu();
+browserMenu.append(new MenuItem({ label: 'Account Settings', click() { app.goToView('login') } }));
+browserMenu.append(new MenuItem({ type: 'separator' }));
+browserMenu.append(new MenuItem({ role: 'quit' }));
+
+const loginMenu = new Menu();
+loginMenu.append(new MenuItem({ role: 'quit' }));
 
 // disable zoom
-webFrame.setVisualZoomLevelLimits(1, 1)
+webFrame.setVisualZoomLevelLimits(1, 1);
 webFrame.setLayoutZoomLevelLimits(0, 0);
-
-const api = new ApiClient();
 
 var categoryFilter = function(patches, category) {
   var filtered = patches.filter((p) => { return p.category === category });
@@ -19,7 +29,7 @@ var categoryFilter = function(patches, category) {
   });
 }
 
-var app = new Vue({
+app = new Vue({
   el: '#app',
   data: {
     patches: [],
@@ -36,7 +46,14 @@ var app = new Vue({
     setLoginError: function(error) { this.loginError = error; },
     setLoggedInFalse: function() { this.isLoggedIn = false; },
     setLoggedInTrue: function() { this.isLoggedIn = true; },
-    mountOP1: function() { ipcRenderer.send('mount-op1'); }
+    mountOP1: function() { ipcRenderer.send('mount-op1'); },
+    showPopupMenu: function() {
+      if (this.currentView === 'login') {
+        loginMenu.popup(remote.getCurrentWindow());
+      } else {
+        browserMenu.popup(remote.getCurrentWindow());
+      }
+    },
   },
   components: {
     

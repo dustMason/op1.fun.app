@@ -26,11 +26,11 @@ const mb = menubar({
   icon: path.join(__dirname, 'icon.png')
 });
 
-mb.icon = path.join(__dirname, 'op1fun.icns');
-
 mb.on('ready', function ready() {
-  ensureConnected().catch(function(reason) {
-    // noop
+  ensureConnected().then(function(message) {
+    mb.showWindow();
+  }, function(reason) {
+    mb.showWindow();
   });
 });
 
@@ -68,6 +68,10 @@ ipcMain.on('mount-op1', (event, arg) => {
   ensureConnected().catch(function(reason) {
     // noop
   });
+});
+
+ipcMain.on('show-config-menu', (event, arg) => {
+  popupMenu.popup();
 });
 
 function loadPatch(patch, packDir) {
