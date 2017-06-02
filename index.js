@@ -150,6 +150,10 @@ function watchOP1() {
     watcher.close();
   }
   
+  if (patches.length > 0) {
+    patches = [];
+  }
+  
   return new Promise((resolve, reject) => {
     
     drivelist.list((error, drives) => {
@@ -157,8 +161,11 @@ function watchOP1() {
       
       for (var i = 0; i < drives.length; i++) {
         if (drives[i].description.indexOf("OP-1") > -1) {
-          mountpoint = drives[i].mountpoints[0].path;
-          break;
+          var m = drives[i].mountpoints[0];
+          if (m) {
+            mountpoint = m.path;
+            break;
+          }
         }
       }
       
@@ -173,28 +180,30 @@ function watchOP1() {
         ignored: /(^|[\/\\])\../,
         awaitWriteFinish: true
       }).on('all', (event, path) => {
-        var relPath = path.slice(mountpoint.length);
-        var parts = relPath.split("/");
-        if (
-          // ignore album, tape and user preset patches
-          ((parts[1] === "synth") || (parts[1] === "drum")) && parts[2] != "user"
-        ) {
-          if (event === 'add') {
-            try {
-              const patch = new OP1Patch({path: path, relPath: relPath});
-              if (patch.metadata) {
-                patches.push(patch);
-                mb.window.webContents.send('render-patches', patches);
+        if (mountpoint) {
+          var relPath = path.slice(mountpoint.length);
+          var parts = relPath.split("/");
+          if (
+            // ignore album, tape and user preset patches
+            ((parts[1] === "synth") || (parts[1] === "drum")) && parts[2] != "user"
+          ) {
+            if (event === 'add') {
+              try {
+                const patch = new OP1Patch({path: path, relPath: relPath});
+                if (patch.metadata) {
+                  patches.push(patch);
+                  mb.window.webContents.send('render-patches', patches);
+                }
+              } catch(e) {
+                console.log(e);
               }
-            } catch(e) {
-              console.log(e);
+            } else if (event === 'unlink') {
+              patches = patches.filter(function(p) { return p.relPath !== relPath });
+              mb.window.webContents.send('render-patches', patches);
             }
-          } else if (event === 'unlink') {
-            patches = patches.filter(function(p) { return p.relPath !== relPath });
-            mb.window.webContents.send('render-patches', patches);
+          } else {
+            // console.log(event, path);
           }
-        } else {
-          // console.log(event, path);
         }
       }).on('raw', function(event, path, details) {
         if (
