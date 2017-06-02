@@ -1,22 +1,24 @@
 {
   "name": "op1.fun",
   "version": "1.0.0",
-  "description": "",
+  "description": "Companion app for https://op1.fun",
   "main": "index.js",
   "dependencies": {
     "chokidar": "^1.7.0",
     "drivelist": "^5.0.21",
-    "electron": "^1.6.8",
     "electron-config": "^1.0.0",
     "electron-dl": "^1.9.0",
     "jsonapi-datastore": "niksy/jsonapi-datastore",
     "menubar": "^5.2.3"
   },
   "devDependencies": {
+    "electron": "^1.6.10",
+    "electron-packager": "^8.7.0",
     "electron-rebuild": "^1.5.11"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm install && electron .",
+    "dist": "npm install && electron-rebuild && electron-packager . \"op1fun\" --platform=darwin --arch=x64 --app-bundle-id=\"com.fiftyfootfoghorn.op1fun\" --app-version=\"1.0.1\" --build-version=\"1.0.101\" --protocol op1fun --protocol-name \"op1.fun\" --overwrite --icon op1fun.icns"
   },
   "author": "",
   "license": "ISC"
