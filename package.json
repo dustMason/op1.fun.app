@@ -18,7 +18,7 @@
   },
   "scripts": {
     "start": "npm install && electron .",
-    "dist": "npm install && electron-rebuild && electron-packager . \"op1fun\" --platform=darwin --arch=x64 --app-bundle-id=\"com.fiftyfootfoghorn.op1fun\" --app-version=\"1.0.1\" --build-version=\"1.0.101\" --protocol op1fun --protocol-name \"op1.fun\" --overwrite --icon op1fun.icns"
+    "dist": "npm install && electron-rebuild && electron-packager . \"op1fun\" --platform=darwin --arch=x64 --app-bundle-id=\"com.fiftyfootfoghorn.op1fun\" --app-version=\"1.0.1\" --build-version=\"1.0.101\" --protocol op1fun --protocol-name \"op1.fun\" --overwrite --icon op1fun.icns --out dist --ignore \"^dist\/.*\""
   },
   "author": "",
   "license": "ISC"
