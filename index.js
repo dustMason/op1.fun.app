@@ -12,7 +12,7 @@ const os = require('os');
 const isDev = require('electron-is-dev');
 
 if (!isDev) {
-  const version = "1.0.2";
+  const version = require('./package.json').version;
   const platform = os.platform() + "_" + os.arch();
   autoUpdater.setFeedURL('https://nuts.op1.fun/update/'+platform+'/'+version);
   autoUpdater.checkForUpdates();

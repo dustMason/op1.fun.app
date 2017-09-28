@@ -3,6 +3,7 @@ const { Menu, MenuItem } = remote;
 const ApiClient = require('./api-client');
 const groupBy = require('./lib/group-by');
 const api = new ApiClient();
+const version = require('./package.json').version;
 
 var app;
     
@@ -65,6 +66,7 @@ app = new Vue({
       data: function() {
         return {
           email: api.email(),
+          version: version,
           password: ''
         }
       },

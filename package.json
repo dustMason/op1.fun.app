@@ -1,6 +1,6 @@
 {
   "name": "op1.fun",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Companion app for https://op1.fun",
   "main": "index.js",
   "dependencies": {
@@ -19,8 +19,11 @@
   },
   "scripts": {
     "start": "npm install && electron .",
-    "dist": "npm install && electron-rebuild && electron-packager . \"op1fun\" --platform=darwin --arch=x64 --app-bundle-id=\"com.fiftyfootfoghorn.op1fun\" --app-version=\"1.0.2\" --build-version=\"1.0.200\" --protocol op1fun --protocol-name \"op1.fun\" --overwrite --icon op1fun.icns --out dist --osx-sign.identity=\"3rd Party Mac Developer Application: Genuine Parts, LLC (S9R2U6487K)\" --ignore \"^dist/.*\""
+    "dist": "npm install && electron-rebuild && electron-packager . \"op1fun\" --platform=darwin --arch=x64 --app-bundle-id=\"com.fiftyfootfoghorn.op1fun\" --app-version=\"$(npm run --silent version)\" --build-version=\"$(npm run --silent version)\" --protocol op1fun --protocol-name \"op1.fun\" --overwrite --icon op1fun.icns --out dist --osx-sign.identity=\"3rd Party Mac Developer Application: Genuine Parts, LLC (S9R2U6487K)\" --ignore \"^dist/.*\"",
+    "clear": "rm -rf dist/*",
+    "release": "npm version patch && npm run clear && npm run dist && zip -q -r dist/op1fun-darwin-x86.zip dist/op1fun-darwin-x86 && hub release create v$(npm run --silent version) -a \"dist/op1fun-darwin-x86.zip\"",
+    "version": "node -p \"require('./package.json').version\""
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Jordan Sitkin",
+  "license": "MIT"
 }
