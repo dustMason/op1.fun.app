@@ -21,7 +21,7 @@
     "start": "npm install && electron .",
     "dist": "npm install && electron-rebuild && electron-packager . \"op1fun\" --platform=darwin --arch=x64 --app-bundle-id=\"com.fiftyfootfoghorn.op1fun\" --app-version=\"$(npm run --silent version)\" --build-version=\"$(npm run --silent version)\" --protocol op1fun --protocol-name \"op1.fun\" --overwrite --icon op1fun.icns --out dist --osx-sign.identity=\"3rd Party Mac Developer Application: Genuine Parts, LLC (S9R2U6487K)\" --ignore \"^dist/.*\"",
     "clear": "rm -rf dist/*",
-    "release": "npm version patch && npm run clear && npm run dist && zip -q -r dist/op1fun-darwin-x86.zip dist/op1fun-darwin-x86 && hub release create v$(npm run --silent version) -a \"dist/op1fun-darwin-x86.zip\"",
+    "release": "npm version patch && npm run clear && npm run dist && zip -rq dist/op1fun-darwin-x64.zip dist/op1fun-darwin-x64 && hub release create v$(npm run --silent version) -a \"dist/op1fun-darwin-x86.zip\"",
     "version": "node -p \"require('./package.json').version\""
   },
   "author": "Jordan Sitkin",
