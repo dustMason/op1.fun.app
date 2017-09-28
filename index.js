@@ -1,5 +1,5 @@
 const menubar = require('menubar');
-const {protocol, ipcMain, shell} = require('electron');
+const {autoUpdater, dialog, protocol, ipcMain, shell} = require('electron');
 const {download} = require('electron-dl');
 const chokidar = require('chokidar');
 const drivelist = require('drivelist');
@@ -8,6 +8,35 @@ const OP1Patch = require('./op1-patch');
 const ApiClient = require('./api-client');
 const api = new ApiClient();
 const path = require('path');
+const os = require('os');
+const isDev = require('electron-is-dev');
+
+if (!isDev) {
+  const version = "1.0.2";
+  const platform = os.platform() + "_" + os.arch();
+  autoUpdater.setFeedURL('https://nuts.op1.fun/update/'+platform+'/'+version);
+  autoUpdater.checkForUpdates();
+  setInterval(() => { autoUpdater.checkForUpdates() }, 300000);
+  
+  autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+    const dialogOpts = {
+      type: 'info',
+      buttons: ['Restart', 'Later'],
+      title: 'Application Update',
+      message: releaseName,
+      detail: 'A new version of op1.fun.app has been downloaded. Restart the application to apply the update.'
+    }
+
+    dialog.showMessageBox(dialogOpts, (response) => {
+      if (response === 0) autoUpdater.quitAndInstall();
+    });
+  });
+  
+  autoUpdater.on('error', message => {
+    console.error('There was a problem updating the application');
+    console.error(message);
+  });
+}
 
 var email,
     token,
