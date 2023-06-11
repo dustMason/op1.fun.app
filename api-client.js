@@ -1,10 +1,10 @@
 const JsonApiDataStore = require('jsonapi-datastore').Store;
-const Config = require('electron-config');
+const ElectronStore = require('electron-store');
 const https = require('https');
 
 class ApiClient {
   constructor() {
-    this.config = new Config();
+    this.config = new ElectronStore();
     this.store = new JsonApiDataStore();
   }
   

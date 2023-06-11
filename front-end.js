@@ -1,27 +1,17 @@
-const { ipcRenderer, webFrame, remote } = require('electron');
-const { Menu, MenuItem } = remote;
+const { ipcRenderer, webFrame } = require('electron');
 const ApiClient = require('./api-client');
 const groupBy = require('./lib/group-by');
 const api = new ApiClient();
 const version = require('./package.json').version;
 
 var app;
-    
-const browserMenu = new Menu();
-browserMenu.append(new MenuItem({ label: 'Account Settings', click() { app.goToView('login') } }));
-browserMenu.append(new MenuItem({ type: 'separator' }));
-browserMenu.append(new MenuItem({ role: 'quit' }));
-
-const loginMenu = new Menu();
-loginMenu.append(new MenuItem({ role: 'quit' }));
 
 // disable zoom
 webFrame.setVisualZoomLevelLimits(1, 1);
-webFrame.setLayoutZoomLevelLimits(0, 0);
 
-var categoryFilter = function(patches, category) {
+var categoryFilter = function (patches, category) {
   var filtered = patches.filter((p) => { return p.category === category });
-  return filtered.sort(function(a, b) {
+  return filtered.sort(function (a, b) {
     // "/000" makes root level patches sort to the top
     var _a = (a.packDir || "/000") + a.name.toLowerCase();
     var _b = (b.packDir || "/000") + b.name.toLowerCase();
@@ -42,28 +32,24 @@ app = new Vue({
     connected: false
   },
   methods: {
-    goToView: function(e) { this.currentView = e },
-    showList: function(e) { this.currentListId = e },
-    setLoginError: function(error) { this.loginError = error; },
-    setLoggedInFalse: function() { this.isLoggedIn = false; },
-    setLoggedInTrue: function() { this.isLoggedIn = true; },
-    mountOP1: function() { ipcRenderer.send('mount-op1'); },
-    showPopupMenu: function() {
-      if (this.currentView === 'login') {
-        loginMenu.popup(remote.getCurrentWindow());
-      } else {
-        browserMenu.popup(remote.getCurrentWindow());
-      }
+    goToView: function (e) { this.currentView = e },
+    showList: function (e) { this.currentListId = e },
+    setLoginError: function (error) { this.loginError = error; },
+    setLoggedInFalse: function () { this.isLoggedIn = false; },
+    setLoggedInTrue: function () { this.isLoggedIn = true; },
+    mountOP1: function () { ipcRenderer.send('mount-op1'); },
+    showPopupMenu: function () {
+      ipcRenderer.send('show-popup-menu', { view: this.currentView });
     },
   },
   components: {
-    
+
     //
     // LOGIN
     //
     login: {
       template: '#login',
-      data: function() {
+      data: function () {
         return {
           email: api.email(),
           version: version,
@@ -72,7 +58,7 @@ app = new Vue({
       },
       props: ['loginError', 'isLoggedIn'],
       methods: {
-        logIn: function(e) {
+        logIn: function (e) {
           api.logIn(this.email, this.password, (res) => {
             if (res.error) {
               this.$emit('error', res.error);
@@ -83,14 +69,14 @@ app = new Vue({
             }
           });
         },
-        logOut: function() {
+        logOut: function () {
           api.logOut(() => {
             this.$emit('log-out');
           });
         }
       }
     },
-    
+
     //
     // BROWSER
     //
@@ -98,7 +84,7 @@ app = new Vue({
       template: '#browser',
       props: ['patches', 'downloading', 'currentListId', 'connected'],
       computed: {
-        filteredPatches: function() {
+        filteredPatches: function () {
           return categoryFilter(this.patches, this.currentListId);
         },
       },
@@ -106,13 +92,13 @@ app = new Vue({
         sideNav: {
           template: '#side-nav',
           props: ['patches', 'currentListId'],
-          data: function() {
+          data: function () {
             return {
               limits: { drum: 42, synth: 100, sampler: 42 },
             }
           },
           computed: {
-            navItems: function() {
+            navItems: function () {
               var sub = (cat) => {
                 return categoryFilter(this.patches, cat).length + " of " + this.limits[cat];
               }
@@ -129,20 +115,20 @@ app = new Vue({
           template: "<component :is='currentComponent' :patches='patches' :id='id'></component>",
           props: ['currentListId', 'patches', 'id'],
           computed: {
-            currentComponent: function() {
+            currentComponent: function () {
               return (this.currentListId === 'backups') ? 'backups' : 'patch-list';
             }
           },
           components: {
-            
+
             patchList: {
               template: '#patch-list',
               props: ['patches', 'id'],
               computed: {
-                packs: function() { return groupBy(this.patches, 'packName') }
+                packs: function () { return groupBy(this.patches, 'packName') }
               },
               methods: {
-                showInFinder: function(e) {
+                showInFinder: function (e) {
                   if (e) {
                     ipcRenderer.send('show-in-finder', e.target.getAttribute("href"));
                   }
@@ -152,7 +138,7 @@ app = new Vue({
             backups: {
               template: '#backups'
             }
-            
+
           }
         },
         disconnected: {
@@ -160,9 +146,13 @@ app = new Vue({
         }
       }
     }
-    
+
   }
-  
+
+});
+
+ipcRenderer.on('go-to-view', (event, view) => {
+  app.goToView(view);
 });
 
 ipcRenderer.on('render-patches', (event, patches) => {
