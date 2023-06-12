@@ -19,11 +19,11 @@
   },
   "scripts": {
     "start": "npm install && electron .",
-    "dist": "npm install && electron-rebuild && electron-packager . \"op1fun\" --platform=darwin --arch=x64 --app-bundle-id=\"com.fiftyfootfoghorn.op1fun\" --app-version=\"$(npm run --silent version)\" --build-version=\"$(npm run --silent version)\" --protocol op1fun --protocol-name \"op1.fun\" --overwrite --icon op1fun.icns --osx-sign.identity=\"Developer ID Application: Genuine Parts, LLC (S9R2U6487K)\" --ignore \"^op1fun-darwin-x64.*\"",
-    "clear": "rm -rf op1fun-darwin-x64 && rm -rf op1fun-darwin-x64.zip",
+    "dist": "npm install && electron-rebuild && electron-packager . \"op1fun\" --platform=darwin --arch=universal --osxUniversal.x64ArchFiles=\"*\" --app-bundle-id=\"com.fiftyfootfoghorn.op1fun\" --app-version=\"$(npm run --silent version)\" --build-version=\"$(npm run --silent version)\" --protocol op1fun --protocol-name \"op1.fun\" --overwrite --icon op1fun.icns --osx-sign.identity=\"Developer ID Application: Genuine Parts, LLC (S9R2U6487K)\" --ignore \"^op1fun-darwin-universal.*\"",
+    "clear": "rm -rf op1fun-darwin-universal && rm -rf op1fun-darwin-universal.zip",
     "release": "npm version patch && npm run clear && npm run dist && npm run zip && npm run github-release",
-    "zip": "zip -rqy op1fun-darwin-x64.zip op1fun-darwin-x64",
-    "github-release": "hub release create v$(npm run --silent version) -a \"op1fun-darwin-x64.zip\" -m \"v$(npm run --silent version)\"",
+    "zip": "zip -rqy op1fun-darwin-universal.zip op1fun-darwin-universal",
+    "github-release": "hub release create v$(npm run --silent version) -a \"op1fun-darwin-universal.zip\" -m \"v$(npm run --silent version)\"",
     "version": "node -p \"require('./package.json').version\""
   },
   "author": "Jordan Sitkin",

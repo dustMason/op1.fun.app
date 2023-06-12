@@ -54,10 +54,10 @@ const mb = menubar({
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
-    }
+    },
+    width: 600
   },
   preloadWindow: true,
-  width: 600,
   icon: path.join(__dirname, 'icon.png')
 });
 
@@ -199,7 +199,7 @@ function ensureConnected() {
   }
 }
 
-function watchOP1() {
+async function watchOP1() {
   if (watcher) {
     watcher.close();
   }
@@ -208,72 +208,67 @@ function watchOP1() {
     patches = [];
   }
 
-  return new Promise((resolve, reject) => {
+  try {
+    const drives = await drivelist.list();
 
-    drivelist.list((error, drives) => {
-      if (error) { reject(error); }
-
-      for (var i = 0; i < drives.length; i++) {
-        if (drives[i].description.indexOf("OP-1") > -1) {
-          var m = drives[i].mountpoints[0];
-          if (m) {
-            mountpoint = m.path;
-            break;
-          }
+    for (let i = 0; i < drives.length; i++) {
+      if (drives[i].description.indexOf("OP-1") > -1) {
+        const m = drives[i].mountpoints[0];
+        if (m) {
+          mountpoint = m.path;
+          break;
         }
       }
+    }
 
-      if (!mountpoint) {
-        mounted = false;
-        return reject("OP-1 not found");
-      } else {
-        mounted = true;
-      }
+    if (!mountpoint) {
+      mounted = false;
+      throw new Error("OP-1 not found");
+    } else {
+      mounted = true;
+    }
 
-      watcher = chokidar.watch(mountpoint, {
-        ignored: /(^|[\/\\])\../,
-        awaitWriteFinish: true
-      }).on('all', (event, path) => {
-        if (mountpoint) {
-          var relPath = path.slice(mountpoint.length);
-          var parts = relPath.split("/");
-          if (
-            // ignore album, tape and user preset patches
-            ((parts[1] === "synth") || (parts[1] === "drum")) && parts[2] != "user"
-          ) {
-            if (event === 'add') {
-              try {
-                const patch = new OP1Patch({ path: path, relPath: relPath });
-                if (patch.metadata) {
-                  patches.push(patch);
-                  mb.window.webContents.send('render-patches', patches);
-                }
-              } catch (e) {
-                console.log(e);
-              }
-            } else if (event === 'unlink') {
-              patches = patches.filter(function (p) { return p.relPath !== relPath });
-              mb.window.webContents.send('render-patches', patches);
-            }
-          } else {
-            // console.log(event, path);
-          }
-        }
-      }).on('raw', function (event, path, details) {
+    watcher = chokidar.watch(mountpoint, {
+      ignored: /(^|[\/\\])\../,
+      awaitWriteFinish: true
+    }).on('all', (event, path) => {
+      if (mountpoint) {
+        const relPath = path.slice(mountpoint.length);
+        const parts = relPath.split("/");
         if (
-          (details.event === 'root-changed') ||
-          (details.event === 'deleted' && path === mountpoint)
+          // ignore album, tape and user preset patches
+          ((parts[1] === "synth") || (parts[1] === "drum")) && parts[2] != "user"
         ) {
-          mountpoint = null;
-          mounted = false; // treat this as a disconnect
+          if (event === 'add') {
+            try {
+              const patch = new OP1Patch({ path: path, relPath: relPath });
+              if (patch.metadata) {
+                patches.push(patch);
+                mb.window.webContents.send('render-patches', patches);
+              }
+            } catch (e) {
+              console.log(e);
+            }
+          } else if (event === 'unlink') {
+            patches = patches.filter(function (p) { return p.relPath !== relPath });
+            mb.window.webContents.send('render-patches', patches);
+          }
+        } else {
+          // console.log(event, path);
         }
-      });
-
-      resolve(watcher);
-
+      }
+    }).on('raw', function (event, path, details) {
+      if (
+        (details.event === 'root-changed') ||
+        (details.event === 'deleted' && path === mountpoint)
+      ) {
+        mountpoint = null;
+        mounted = false; // treat this as a disconnect
+      }
     });
 
-
-  })
-
+    return watcher;
+  } catch (error) {
+    return Promise.reject(error);
+  }
 }
