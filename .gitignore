@@ -1,5 +1,7 @@
 node_modules
-/op1fun-darwin-universal
+/op1fun-darwin-x64
+/op1fun-darwin-arm64
 /dist
-/op1fun-darwin-universal.zip
+/op1fun-darwin-x64.zip
+/op1fun-darwin-arm64.zip
 /.vscode
