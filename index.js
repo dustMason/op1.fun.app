@@ -1,6 +1,6 @@
-const { menubar } = require('menubar');
-const { autoUpdater, dialog, ipcMain, shell, Menu } = require('electron');
-const { download } = require('electron-dl');
+const {menubar} = require('menubar');
+const {autoUpdater, dialog, ipcMain, shell, Menu} = require('electron');
+const {download} = require('electron-dl');
 const chokidar = require('chokidar');
 const drivelist = require('drivelist');
 const Url = require('url');
@@ -13,10 +13,12 @@ const isDev = require('electron-is-dev');
 
 if (!isDev) {
   const version = require('./package.json').version;
-  const platform = os.platform() + "_" + os.arch();
+  const platform = os.platform() + '_' + os.arch();
   autoUpdater.setFeedURL('https://nuts.op1.fun/update/' + platform + '/' + version);
   autoUpdater.checkForUpdates();
-  setInterval(() => { autoUpdater.checkForUpdates() }, 300000);
+  setInterval(() => {
+    autoUpdater.checkForUpdates();
+  }, 300000);
 
   autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
     const dialogOpts = {
@@ -25,27 +27,24 @@ if (!isDev) {
       title: 'Application Update',
       message: releaseName,
       detail: 'A new version of op1.fun.app has been downloaded. Restart the application to apply the update.'
-    }
+    };
 
     dialog.showMessageBox(dialogOpts, (response) => {
       if (response === 0) autoUpdater.quitAndInstall();
     });
   });
 
-  autoUpdater.on('error', message => {
+  autoUpdater.on('error', (message) => {
     console.error('There was a problem updating the application');
     console.error(message);
   });
 }
 
-var email,
-    token,
-    watcher,
-    urlToOpen,
-    mountpoint,
-    patches = [],
-    mounted = false,
-    settingUpWatcher = false;
+let watcher;
+let mountpoint;
+let patches = [];
+let mounted = false;
+let settingUpWatcher = false;
 
 // mountpoint = "/Users/jordan/Documents/OP-1/fakeop1";
 
@@ -62,18 +61,18 @@ const mb = menubar({
 });
 
 mb.on('ready', function ready() {
-  ensureConnected().then(function (message) {
+  ensureConnected().then(function(message) {
     mb.showWindow();
-  }, function (reason) {
+  }, function(reason) {
     mb.showWindow();
   });
 });
 
-mb.app.on('open-url', function (e, urlStr) {
+mb.app.on('open-url', function(e, urlStr) {
   e.preventDefault();
   if (ensureLoggedIn()) {
-    ensureConnected().then(function () {
-      var { id, path, type } = parseUrl(urlStr);
+    ensureConnected().then(function() {
+      const {id, path, type} = parseUrl(urlStr);
       if (type === 'packs' && id) {
         api.getPack(path, id, loadPack);
       } else if (type === 'patches' && id) {
@@ -89,7 +88,7 @@ mb.app.on('open-url', function (e, urlStr) {
 
 mb.on('after-show', function show() {
   if (ensureLoggedIn()) {
-    ensureConnected().catch(function (reason) {
+    ensureConnected().catch(function(reason) {
       // noop
     });
   };
@@ -99,18 +98,18 @@ ipcMain.on('show-popup-menu', (event, args) => {
   let menu;
   if (args.view === 'login') {
     menu = Menu.buildFromTemplate([
-      { role: 'quit' }
+      {role: 'quit'}
     ]);
   } else {
     menu = Menu.buildFromTemplate([
-      { label: 'Account Settings', click: () => {
+      {label: 'Account Settings', click: () => {
         mb.window.webContents.send('go-to-view', 'login');
       }},
-      { type: 'separator' },
-      { role: 'quit' }
+      {type: 'separator'},
+      {role: 'quit'}
     ]);
   }
-  
+
   menu.popup(mb.window);
 });
 
@@ -119,7 +118,7 @@ ipcMain.on('show-in-finder', (event, arg) => {
 });
 
 ipcMain.on('mount-op1', (event, arg) => {
-  ensureConnected().catch(function (reason) {
+  ensureConnected().catch(function(reason) {
     // noop
   });
 });
@@ -130,7 +129,7 @@ ipcMain.on('show-config-menu', (event, arg) => {
 
 function loadPatch(patch, packDir) {
   mb.showWindow();
-  var dir = [mountpoint];
+  const dir = [mountpoint];
   if (patch['patch-type'] === 'drum') {
     dir.push('drum');
   } else {
@@ -139,35 +138,37 @@ function loadPatch(patch, packDir) {
   if (packDir) {
     dir.push(packDir);
   } else {
-    mb.window.webContents.send('start-download', { patch: patch });
+    mb.window.webContents.send('start-download', {patch: patch});
   }
-  result = download(mb.window, patch.links.file, { directory: dir.join("/") });
+  result = download(mb.window, patch.links.file, {directory: dir.join('/')});
   if (!packDir) {
-    result = result.then(function () {
-      mb.window.webContents.send('finish-download', { patch: patch });
+    result = result.then(function() {
+      mb.window.webContents.send('finish-download', {patch: patch});
     });
   }
   return result;
 }
 
 function loadPack(pack) {
-  mb.window.webContents.send('start-download', { pack: pack });
-  var result = Promise.resolve();
-  pack.patches.forEach(function (patch) {
+  mb.window.webContents.send('start-download', {pack: pack});
+  let result = Promise.resolve();
+  pack.patches.forEach(function(patch) {
     result = result.then(() => loadPatch(patch, pack.id));
   });
-  result = result.then(function () {
-    mb.window.webContents.send('finish-download', { pack: pack });
-  })
+  result = result.then(function() {
+    mb.window.webContents.send('finish-download', {pack: pack});
+  });
   return result;
 }
 
 function parseUrl(urlStr) {
-  var parsed = Url.parse(urlStr);
-  var path = parsed.pathname
-  while (path.charAt(0) === "/") { path = path.slice(1); }
-  var parts = path.split("/");
-  return { type: parts[2], id: parts[3], path: path };
+  const parsed = Url.parse(urlStr);
+  let path = parsed.pathname;
+  while (path.charAt(0) === '/') {
+    path = path.slice(1);
+  }
+  const parts = path.split('/');
+  return {type: parts[2], id: parts[3], path: path};
 }
 
 function ensureLoggedIn() {
@@ -186,10 +187,10 @@ function ensureConnected() {
     return Promise.resolve(true);
   } else if (!settingUpWatcher) {
     settingUpWatcher = true;
-    return watchOP1().then(function () {
+    return watchOP1().then(function() {
       mb.window.webContents.send('op1-connected', true);
       settingUpWatcher = false;
-    }, function (error) {
+    }, function(error) {
       mb.window.webContents.send('op1-connected', false);
       settingUpWatcher = false;
       return Promise.reject();
@@ -229,7 +230,7 @@ async function watchOP1() {
 
   watcher = chokidar.watch(mountpoint, {
     ignored: /(^|[\/\\])\../,
-    awaitWriteFinish: true,
+    awaitWriteFinish: true
   }).on('all', (event, path) => {
     if (mountpoint) {
       const relPath = path.slice(mountpoint.length);
