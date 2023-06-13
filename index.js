@@ -1,5 +1,5 @@
-const menubar = require('menubar');
-const {autoUpdater, dialog, protocol, ipcMain, shell} = require('electron');
+const {menubar} = require('menubar');
+const {autoUpdater, dialog, ipcMain, shell, Menu} = require('electron');
 const {download} = require('electron-dl');
 const chokidar = require('chokidar');
 const drivelist = require('drivelist');
@@ -13,11 +13,13 @@ const isDev = require('electron-is-dev');
 
 if (!isDev) {
   const version = require('./package.json').version;
-  const platform = os.platform() + "_" + os.arch();
-  autoUpdater.setFeedURL('https://nuts.op1.fun/update/'+platform+'/'+version);
+  const platform = os.platform() + '_' + os.arch();
+  autoUpdater.setFeedURL('https://nuts.op1.fun/update/' + platform + '/' + version);
   autoUpdater.checkForUpdates();
-  setInterval(() => { autoUpdater.checkForUpdates() }, 300000);
-  
+  setInterval(() => {
+    autoUpdater.checkForUpdates();
+  }, 300000);
+
   autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
     const dialogOpts = {
       type: 'info',
@@ -25,33 +27,36 @@ if (!isDev) {
       title: 'Application Update',
       message: releaseName,
       detail: 'A new version of op1.fun.app has been downloaded. Restart the application to apply the update.'
-    }
+    };
 
     dialog.showMessageBox(dialogOpts, (response) => {
       if (response === 0) autoUpdater.quitAndInstall();
     });
   });
-  
-  autoUpdater.on('error', message => {
+
+  autoUpdater.on('error', (message) => {
     console.error('There was a problem updating the application');
     console.error(message);
   });
 }
 
-var email,
-    token,
-    watcher,
-    urlToOpen,
-    mountpoint,
-    patches = [],
-    mounted = false,
-    settingUpWatcher = false;
+let watcher;
+let mountpoint;
+let patches = [];
+let mounted = false;
+let settingUpWatcher = false;
 
 // mountpoint = "/Users/jordan/Documents/OP-1/fakeop1";
 
 const mb = menubar({
+  browserWindow: {
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    },
+    width: 600
+  },
   preloadWindow: true,
-  width: 600,
   icon: path.join(__dirname, 'icon.png')
 });
 
@@ -66,8 +71,8 @@ mb.on('ready', function ready() {
 mb.app.on('open-url', function(e, urlStr) {
   e.preventDefault();
   if (ensureLoggedIn()) {
-    ensureConnected().then(function(){
-      var { id, path, type } = parseUrl(urlStr);
+    ensureConnected().then(function() {
+      const {id, path, type} = parseUrl(urlStr);
       if (type === 'packs' && id) {
         api.getPack(path, id, loadPack);
       } else if (type === 'patches' && id) {
@@ -77,7 +82,7 @@ mb.app.on('open-url', function(e, urlStr) {
   };
 });
 
-// mb.on('after-create-window', function() {
+// mb.on('after-create-window', function () {
 //   mb.window.openDevTools();
 // });
 
@@ -87,6 +92,25 @@ mb.on('after-show', function show() {
       // noop
     });
   };
+});
+
+ipcMain.on('show-popup-menu', (event, args) => {
+  let menu;
+  if (args.view === 'login') {
+    menu = Menu.buildFromTemplate([
+      {role: 'quit'}
+    ]);
+  } else {
+    menu = Menu.buildFromTemplate([
+      {label: 'Account Settings', click: () => {
+        mb.window.webContents.send('go-to-view', 'login');
+      }},
+      {type: 'separator'},
+      {role: 'quit'}
+    ]);
+  }
+
+  menu.popup(mb.window);
 });
 
 ipcMain.on('show-in-finder', (event, arg) => {
@@ -105,7 +129,7 @@ ipcMain.on('show-config-menu', (event, arg) => {
 
 function loadPatch(patch, packDir) {
   mb.showWindow();
-  var dir = [mountpoint];
+  const dir = [mountpoint];
   if (patch['patch-type'] === 'drum') {
     dir.push('drum');
   } else {
@@ -114,35 +138,37 @@ function loadPatch(patch, packDir) {
   if (packDir) {
     dir.push(packDir);
   } else {
-    mb.window.webContents.send('start-download', { patch: patch });
+    mb.window.webContents.send('start-download', {patch: patch});
   }
-  result = download(mb.window, patch.links.file, { directory: dir.join("/") });
+  result = download(mb.window, patch.links.file, {directory: dir.join('/')});
   if (!packDir) {
     result = result.then(function() {
-      mb.window.webContents.send('finish-download', { patch: patch });
+      mb.window.webContents.send('finish-download', {patch: patch});
     });
   }
   return result;
 }
 
 function loadPack(pack) {
-  mb.window.webContents.send('start-download', { pack: pack });
-  var result = Promise.resolve();
+  mb.window.webContents.send('start-download', {pack: pack});
+  let result = Promise.resolve();
   pack.patches.forEach(function(patch) {
     result = result.then(() => loadPatch(patch, pack.id));
   });
   result = result.then(function() {
-    mb.window.webContents.send('finish-download', { pack: pack });
-  })
+    mb.window.webContents.send('finish-download', {pack: pack});
+  });
   return result;
 }
 
 function parseUrl(urlStr) {
-  var parsed = Url.parse(urlStr);
-  var path = parsed.pathname
-  while (path.charAt(0) === "/") { path = path.slice(1); }
-  var parts = path.split("/");
-  return { type: parts[2], id: parts[3], path: path };
+  const parsed = Url.parse(urlStr);
+  let path = parsed.pathname;
+  while (path.charAt(0) === '/') {
+    path = path.slice(1);
+  }
+  const parts = path.split('/');
+  return {type: parts[2], id: parts[3], path: path};
 }
 
 function ensureLoggedIn() {
@@ -174,81 +200,74 @@ function ensureConnected() {
   }
 }
 
-function watchOP1() {
+async function watchOP1() {
   if (watcher) {
     watcher.close();
   }
-  
+
   if (patches.length > 0) {
     patches = [];
   }
-  
-  return new Promise((resolve, reject) => {
-    
-    drivelist.list((error, drives) => {
-      if (error) { reject(error); }
-      
-      for (var i = 0; i < drives.length; i++) {
-        if (drives[i].description.indexOf("OP-1") > -1) {
-          var m = drives[i].mountpoints[0];
-          if (m) {
-            mountpoint = m.path;
-            break;
-          }
-        }
+
+  const drives = await drivelist.list();
+
+  for (let i = 0; i < drives.length; i++) {
+    if (drives[i].description.indexOf('OP-1') > -1) {
+      const m = drives[i].mountpoints[0];
+      if (m) {
+        mountpoint = m.path;
+        break;
       }
-      
-      if (!mountpoint) {
-        mounted = false;
-        return reject("OP-1 not found");
-      } else {
-        mounted = true;
-      }
-      
-      watcher = chokidar.watch(mountpoint, {
-        ignored: /(^|[\/\\])\../,
-        awaitWriteFinish: true
-      }).on('all', (event, path) => {
-        if (mountpoint) {
-          var relPath = path.slice(mountpoint.length);
-          var parts = relPath.split("/");
-          if (
-            // ignore album, tape and user preset patches
-            ((parts[1] === "synth") || (parts[1] === "drum")) && parts[2] != "user"
-          ) {
-            if (event === 'add') {
-              try {
-                const patch = new OP1Patch({path: path, relPath: relPath});
-                if (patch.metadata) {
-                  patches.push(patch);
-                  mb.window.webContents.send('render-patches', patches);
-                }
-              } catch(e) {
-                console.log(e);
-              }
-            } else if (event === 'unlink') {
-              patches = patches.filter(function(p) { return p.relPath !== relPath });
+    }
+  }
+
+  if (!mountpoint) {
+    mounted = false;
+    throw new Error('OP-1 not found');
+  } else {
+    mounted = true;
+  }
+
+  watcher = chokidar.watch(mountpoint, {
+    ignored: /(^|[\/\\])\../,
+    awaitWriteFinish: true
+  }).on('all', (event, path) => {
+    if (mountpoint) {
+      const relPath = path.slice(mountpoint.length);
+      const parts = relPath.split('/');
+      if (
+      // ignore album, tape and user preset patches
+        ((parts[1] === 'synth') || (parts[1] === 'drum')) && parts[2] != 'user'
+      ) {
+        if (event === 'add') {
+          try {
+            const patch = new OP1Patch({path: path, relPath: relPath});
+            if (patch.metadata) {
+              patches.push(patch);
               mb.window.webContents.send('render-patches', patches);
             }
-          } else {
-            // console.log(event, path);
+          } catch (e) {
+            console.log(e);
           }
+        } else if (event === 'unlink') {
+          patches = patches.filter(function(p) {
+            return p.relPath !== relPath;
+          });
+          mb.window.webContents.send('render-patches', patches);
         }
-      }).on('raw', function(event, path, details) {
-        if (
-          (details.event === 'root-changed') ||
-          (details.event === 'deleted' && path === mountpoint)
-        ) {
-          mountpoint = null;
-          mounted = false; // treat this as a disconnect
-        }
-      });
-      
-      resolve(watcher);
-      
-    });
-    
-    
-  })
-  
+      } else {
+        // console.log(event, path);
+      }
+    }
+  }).on('raw', function(event, path, details) {
+    if (
+      (details.event === 'root-changed') ||
+        (details.event === 'deleted' && path === mountpoint)
+    ) {
+      mountpoint = null;
+      mounted = false; // treat this as a disconnect
+    }
+  });
+
+  return watcher;
 }

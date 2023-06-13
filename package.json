@@ -1,29 +1,35 @@
 {
   "name": "op1.fun",
-  "version": "1.0.9",
+  "version": "2.0.0",
   "description": "Companion app for https://op1.fun",
   "main": "index.js",
   "dependencies": {
-    "chokidar": "^1.7.0",
-    "drivelist": "^5.0.21",
-    "electron-config": "^1.0.0",
-    "electron-dl": "^1.9.0",
-    "electron-is-dev": "^0.3.0",
+    "chokidar": "^3.5.3",
+    "drivelist": "^11.1.0",
+    "electron-dl": "^3.5.0",
+    "electron-is-dev": "^2.0.0",
+    "electron-store": "^8.1.0",
     "jsonapi-datastore": "niksy/jsonapi-datastore",
-    "menubar": "^5.2.3"
+    "menubar": "^9.3.0"
   },
   "devDependencies": {
-    "electron": "^1.6.10",
-    "electron-packager": "^8.7.0",
-    "electron-rebuild": "^1.5.11"
+    "@electron/rebuild": "^3.2.13",
+    "electron": "^22.0.0",
+    "electron-packager": "^17.1.1"
   },
   "scripts": {
     "start": "npm install && electron .",
-    "dist": "npm install && electron-rebuild && electron-packager . \"op1fun\" --platform=darwin --arch=x64 --app-bundle-id=\"com.fiftyfootfoghorn.op1fun\" --app-version=\"$(npm run --silent version)\" --build-version=\"$(npm run --silent version)\" --protocol op1fun --protocol-name \"op1.fun\" --overwrite --icon op1fun.icns --osx-sign.identity=\"Developer ID Application: Genuine Parts, LLC (S9R2U6487K)\" --ignore \"^op1fun-darwin-x64.*\"",
-    "clear": "rm -rf op1fun-darwin-x64 && rm -rf op1fun-darwin-x64.zip",
+    "dist": "npm run dist:x64 && npm run dist:arm64",
+    "dist:x64": "export npm_config_arch=x64 && export npm_config_target_arch=x64 && rm -R node_modules || true && npm install && electron-rebuild --arch=x64 && electron-packager . \"op1fun\" --platform=darwin --arch=x64 --app-bundle-id=\"com.fiftyfootfoghorn.op1fun\" --app-version=\"$(npm run --silent version)\" --build-version=\"$(npm run --silent version)\" --protocol op1fun --protocol-name \"op1.fun\" --overwrite --icon op1fun.icns --osx-sign.identity=\"Developer ID Application: Genuine Parts, LLC (S9R2U6487K)\" --ignore \"^op1fun-darwin-(?:x64|arm64).*\"",
+    "dist:arm64": "export npm_config_arch=arm64 && export npm_config_target_arch=arm64 && rm -R node_modules || true && npm install && electron-rebuild --arch=arm64 && electron-packager . \"op1fun\" --platform=darwin --arch=arm64 --app-bundle-id=\"com.fiftyfootfoghorn.op1fun\" --app-version=\"$(npm run --silent version)\" --build-version=\"$(npm run --silent version)\" --protocol op1fun --protocol-name \"op1.fun\" --overwrite --icon op1fun.icns --osx-sign.identity=\"Developer ID Application: Genuine Parts, LLC (S9R2U6487K)\" --ignore \"^op1fun-darwin-(?:x64|arm64).*\"",
+    "clear": "npm run clear:x64 && npm run clear:arm64",
+    "clear:x64": "rm -rf op1fun-darwin-x64 && rm -rf op1fun-darwin-x64.zip",
+    "clear:arm64": "rm -rf op1fun-darwin-arm64 && rm -rf op1fun-darwin-arm64.zip",
     "release": "npm version patch && npm run clear && npm run dist && npm run zip && npm run github-release",
-    "zip": "zip -rqy op1fun-darwin-x64.zip op1fun-darwin-x64",
-    "github-release": "hub release create v$(npm run --silent version) -a \"op1fun-darwin-x64.zip\" -m \"v$(npm run --silent version)\"",
+    "zip": "npm run zip:x64 && npm run zip:arm64",
+    "zip:x64": "zip -rqy op1fun-darwin-x64.zip op1fun-darwin-x64",
+    "zip:arm64": "zip -rqy op1fun-darwin-arm64.zip op1fun-darwin-arm64",
+    "github-release": "hub release create v$(npm run --silent version) -a \"op1fun-darwin-x64.zip\" -a \"op1fun-darwin-arm64.zip\" -m \"v$(npm run --silent version)\"",
     "version": "node -p \"require('./package.json').version\""
   },
   "author": "Jordan Sitkin",
