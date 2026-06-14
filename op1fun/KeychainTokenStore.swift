@@ -3,7 +3,6 @@ import Security
 
 final class CredentialStore {
     private let emailKey = "op1fun.email"
-    private let legacyTokenKey = "op1fun.apiToken"
     private let tokenService = "com.fiftyfootfoghorn.op1fun"
     private let tokenAccount = "apiToken"
 
@@ -18,17 +17,7 @@ final class CredentialStore {
 
     var token: String? {
         get {
-            if let token = keychainToken {
-                return token
-            }
-
-            guard let legacyToken = UserDefaults.standard.string(forKey: legacyTokenKey) else {
-                return nil
-            }
-
-            saveToken(legacyToken)
-            UserDefaults.standard.removeObject(forKey: legacyTokenKey)
-            return legacyToken
+            keychainToken
         }
         set {
             if let newValue, !newValue.isEmpty {
@@ -36,8 +25,6 @@ final class CredentialStore {
             } else {
                 deleteToken()
             }
-
-            UserDefaults.standard.removeObject(forKey: legacyTokenKey)
         }
     }
 
