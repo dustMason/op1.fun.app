@@ -121,7 +121,7 @@ private struct LoginView: View {
                         .font(.heebo(size: 23, weight: .bold))
                         .foregroundStyle(.white)
 
-                    Text("v 1.0")
+                    Text("v 2.0")
                         .font(.heebo(size: 13))
                 }
                 .frame(width: 210, alignment: .leading)

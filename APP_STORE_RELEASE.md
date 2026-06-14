@@ -4,7 +4,7 @@
 
 - App name: `op1.fun`
 - Bundle ID: `com.fiftyfootfoghorn.op1fun`
-- Version: `1.0`
+- Version: `2.0`
 - Build: `1`
 - Minimum macOS: `13.0`
 - Category: Music
@@ -55,4 +55,4 @@ Data not sent to op1.fun:
 3. Select `Product > Archive`.
 4. In Organizer, select the archive and choose `Distribute App`.
 5. Choose `App Store Connect`, then upload.
-6. In App Store Connect, attach the uploaded build to the macOS `1.0` version and submit for review.
+6. In App Store Connect, attach the uploaded build to the macOS `2.0` version and submit for review.
