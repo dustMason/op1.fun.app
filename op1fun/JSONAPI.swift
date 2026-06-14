@@ -4,6 +4,7 @@ enum JSONAPIError: LocalizedError {
     case invalidResource
     case missingDownloadURL
     case missingPackPatches
+    case missingTapeUploads
 
     var errorDescription: String? {
         switch self {
@@ -13,6 +14,8 @@ enum JSONAPIError: LocalizedError {
             return "The selected patch did not include a downloadable file URL."
         case .missingPackPatches:
             return "The selected pack did not include any patch records."
+        case .missingTapeUploads:
+            return "op1.fun did not return upload URLs for this tape."
         }
     }
 }
@@ -80,6 +83,70 @@ enum JSONAPI {
         return RemotePack(id: id, name: name, patches: patches)
     }
 
+    static func parseTapeListRoot(_ data: Data) throws -> [RemoteTape] {
+        let object = try rootObject(from: data)
+        guard let resources = object["data"] as? [[String: Any]] else {
+            throw JSONAPIError.invalidResource
+        }
+
+        return try resources.map(parseTape)
+    }
+
+    static func parseTapeRoot(_ data: Data) throws -> RemoteTape {
+        let object = try rootObject(from: data)
+        guard let resource = object["data"] as? [String: Any] else {
+            throw JSONAPIError.invalidResource
+        }
+
+        return try parseTape(resource)
+    }
+
+    static func parseTapeUploadSessionRoot(_ data: Data) throws -> TapeUploadSession {
+        let object = try rootObject(from: data)
+        guard let resource = object["data"] as? [String: Any] else {
+            throw JSONAPIError.invalidResource
+        }
+
+        let tape = try parseTape(resource)
+        let attributes = resource["attributes"] as? [String: Any] ?? [:]
+        let meta = object["meta"] as? [String: Any] ?? [:]
+        let uploadObjects =
+            meta["uploads"] as? [[String: Any]] ??
+            attributes["upload-urls"] as? [[String: Any]] ??
+            attributes["upload_urls"] as? [[String: Any]] ??
+            []
+
+        let uploadTargets = uploadObjects.compactMap(parseTapeUploadTarget)
+        guard !uploadTargets.isEmpty else {
+            throw JSONAPIError.missingTapeUploads
+        }
+
+        return TapeUploadSession(tape: tape, uploadTargets: uploadTargets)
+    }
+
+    static func parseTapeDownloadRoot(_ data: Data) throws -> URL {
+        let object = try rootObject(from: data)
+
+        if let urlString = object["download_url"] as? String ?? object["download-url"] as? String,
+           let url = URL(string: urlString) {
+            return url
+        }
+
+        if
+            let links = object["links"] as? [String: Any],
+            let url = link(named: "download", in: ["links": links])
+        {
+            return url
+        }
+
+        if let resource = object["data"] as? [String: Any],
+           let url = link(named: "download", in: resource) {
+            return url
+        }
+
+        throw JSONAPIError.missingDownloadURL
+    }
+
     private static func parsePatch(_ resource: [String: Any]) throws -> RemotePatch {
         guard let id = resource["id"] as? String else {
             throw JSONAPIError.invalidResource
@@ -100,12 +167,92 @@ enum JSONAPI {
         return RemotePatch(id: id, name: name, patchType: patchType, fileURL: fileURL)
     }
 
+    private static func parseTape(_ resource: [String: Any]) throws -> RemoteTape {
+        guard let id = resource["id"] as? String else {
+            throw JSONAPIError.invalidResource
+        }
+
+        let attributes = resource["attributes"] as? [String: Any] ?? [:]
+        let name = stringValue(named: "name", in: attributes) ?? "Tape #\(id)"
+        let statusValue = stringValue(named: "status", in: attributes) ?? "unknown"
+        let status = TapeStatus(rawValue: statusValue) ?? .unknown
+        let fingerprint =
+            stringValue(named: "fingerprint", in: attributes) ??
+            stringValue(named: "tape-fingerprint", in: attributes) ??
+            stringValue(named: "tape_fingerprint", in: attributes)
+
+        return RemoteTape(
+            id: id,
+            name: name,
+            status: status,
+            createdAt: dateValue(named: "created-at", in: attributes) ?? dateValue(named: "created_at", in: attributes),
+            updatedAt: dateValue(named: "updated-at", in: attributes) ?? dateValue(named: "updated_at", in: attributes),
+            fingerprint: fingerprint,
+            trackCount: intValue(named: "track-count", in: attributes) ?? intValue(named: "track_count", in: attributes) ?? 0,
+            hasArchive: boolValue(named: "has-archive", in: attributes) ?? boolValue(named: "has_archive", in: attributes) ?? false,
+            previewURL: link(named: "preview", in: resource),
+            downloadURL: link(named: "download", in: resource)
+        )
+    }
+
+    private static func parseTapeUploadTarget(_ object: [String: Any]) -> TapeUploadTarget? {
+        guard
+            let trackNumber = intValue(named: "track-number", in: object) ?? intValue(named: "track_number", in: object),
+            let uploadURLString = stringValue(named: "upload-url", in: object) ?? stringValue(named: "upload_url", in: object),
+            let uploadURL = URL(string: uploadURLString)
+        else {
+            return nil
+        }
+
+        return TapeUploadTarget(
+            trackNumber: trackNumber,
+            uploadURL: uploadURL,
+            filename: stringValue(named: "filename", in: object) ?? "track_\(trackNumber).aif"
+        )
+    }
+
     private static func rootObject(from data: Data) throws -> [String: Any] {
         guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw JSONAPIError.invalidResource
         }
 
         return object
+    }
+
+    private static func stringValue(named name: String, in object: [String: Any]) -> String? {
+        object[name] as? String
+    }
+
+    private static func intValue(named name: String, in object: [String: Any]) -> Int? {
+        if let value = object[name] as? Int {
+            return value
+        }
+
+        if let value = object[name] as? String {
+            return Int(value)
+        }
+
+        return nil
+    }
+
+    private static func boolValue(named name: String, in object: [String: Any]) -> Bool? {
+        if let value = object[name] as? Bool {
+            return value
+        }
+
+        if let value = object[name] as? String {
+            return ["true", "1", "yes"].contains(value.lowercased())
+        }
+
+        return nil
+    }
+
+    private static func dateValue(named name: String, in object: [String: Any]) -> Date? {
+        guard let value = object[name] as? String else {
+            return nil
+        }
+
+        return ISO8601DateFormatter().date(from: value)
     }
 
     private static func link(named name: String, in resource: [String: Any]) -> URL? {

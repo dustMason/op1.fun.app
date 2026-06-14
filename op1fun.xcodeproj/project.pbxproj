@@ -20,6 +20,7 @@
 		10100000000000000000010B /* OP1VolumeAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10100000000000000000000E /* OP1VolumeAccess.swift */; };
 		10100000000000000000010C /* AppAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10100000000000000000000F /* AppAssets.swift */; };
 		10100000000000000000010D /* Resources in Resources */ = {isa = PBXBuildFile; fileRef = 101000000000000000000010 /* Resources */; };
+		10100000000000000000010F /* OP1TapeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101000000000000000000012 /* OP1TapeManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +40,7 @@
 		10100000000000000000000E /* OP1VolumeAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OP1VolumeAccess.swift; sourceTree = "<group>"; };
 		10100000000000000000000F /* AppAssets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAssets.swift; sourceTree = "<group>"; };
 		101000000000000000000010 /* Resources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Resources; sourceTree = "<group>"; };
+		101000000000000000000012 /* OP1TapeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OP1TapeManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -62,6 +64,7 @@
 				101000000000000000000006 /* KeychainTokenStore.swift */,
 				101000000000000000000002 /* Models.swift */,
 				10100000000000000000000E /* OP1VolumeAccess.swift */,
+				101000000000000000000012 /* OP1TapeManager.swift */,
 				101000000000000000000007 /* OP1PatchParser.swift */,
 				101000000000000000000008 /* OP1VolumeMonitor.swift */,
 				10100000000000000000000A /* Info.plist */,
@@ -160,6 +163,7 @@
 				101000000000000000000109 /* ContentView.swift in Sources */,
 				10100000000000000000010B /* OP1VolumeAccess.swift in Sources */,
 				10100000000000000000010C /* AppAssets.swift in Sources */,
+				10100000000000000000010F /* OP1TapeManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -6,10 +6,13 @@ import Foundation
 final class AppModel: ObservableObject {
     @Published var currentView: AppView
     @Published var selectedCategory: PatchCategory = .synth
+    @Published var selectedSection: BrowserSection = .patch(.synth)
     @Published var loginError = ""
     @Published var isLoggingIn = false
+    @Published var isLoadingTapes = false
     @Published var downloadStatus: String?
     @Published var message: String?
+    @Published private(set) var tapes: [RemoteTape] = []
     @Published private(set) var associatedDisks: [OP1DiskAssociation]
 
     let monitor = OP1VolumeMonitor()
@@ -57,6 +60,7 @@ final class AppModel: ObservableObject {
 
     func start() {
         monitor.start()
+        refreshTapes()
     }
 
     func stop() {
@@ -67,6 +71,16 @@ final class AppModel: ObservableObject {
         monitor.patches
             .filter { $0.category == category }
             .sorted { $0.sortKey < $1.sortKey }
+    }
+
+    func selectPatchCategory(_ category: PatchCategory) {
+        selectedCategory = category
+        selectedSection = .patch(category)
+    }
+
+    func selectTapes() {
+        selectedSection = .tapes
+        refreshTapes()
     }
 
     func logIn(email: String, password: String) {
@@ -81,6 +95,7 @@ final class AppModel: ObservableObject {
                 isLoggingIn = false
                 currentView = .browser
                 message = nil
+                refreshTapes()
 
                 Task {
                     try? await apiClient.enableAppFeatureFlag(email: email, token: token)
@@ -103,6 +118,7 @@ final class AppModel: ObservableObject {
         loginError = ""
         message = nil
         pendingURL = nil
+        tapes = []
     }
 
     func refreshOP1() {
@@ -127,6 +143,55 @@ final class AppModel: ObservableObject {
             }
 
             message = error.localizedDescription
+        }
+    }
+
+    func refreshTapes() {
+        guard let email = tokenStore.email, let token = tokenStore.token else {
+            return
+        }
+
+        guard !isLoadingTapes else {
+            return
+        }
+
+        isLoadingTapes = true
+        Task {
+            do {
+                tapes = try await apiClient.fetchTapes(email: email, token: token)
+                isLoadingTapes = false
+            } catch {
+                isLoadingTapes = false
+                if selectedSection == .tapes {
+                    message = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    func saveTapeFromOP1() {
+        Task {
+            do {
+                _ = try await backUpCurrentTape()
+                await monitor.refreshNow()
+                refreshTapes()
+            } catch {
+                downloadStatus = nil
+                message = error.localizedDescription
+            }
+        }
+    }
+
+    func loadTapeToOP1(_ tape: RemoteTape) {
+        Task {
+            do {
+                try await loadTape(tape)
+                await monitor.refreshNow()
+                message = "Loaded \(tape.displayName) to OP-1."
+            } catch {
+                downloadStatus = nil
+                message = error.localizedDescription
+            }
         }
     }
 
@@ -205,6 +270,168 @@ final class AppModel: ObservableObject {
             } else {
                 message = error.localizedDescription
             }
+        }
+    }
+
+    private func backUpCurrentTape() async throws -> RemoteTape {
+        guard let email = tokenStore.email, let token = tokenStore.token else {
+            throw APIClientError.missingCredentials
+        }
+
+        await monitor.refreshNow()
+
+        guard let mountPoint = monitor.mountPoint else {
+            throw OP1VolumeAccessError.notConnected
+        }
+
+        guard let access = volumeAccess.accessForMountedOP1(mountPoint) else {
+            throw OP1VolumeAccessError.notAssociated
+        }
+
+        defer { access.stop() }
+
+        let accessURL = access.url
+        let snapshot = try await Task.detached(priority: .userInitiated) {
+            try OP1TapeManager.snapshot(mountPoint: accessURL)
+        }.value
+        let name = defaultTapeBackupName()
+
+        downloadStatus = "Creating Tape Backup"
+        let session = try await apiClient.createTapeBackup(
+            name: name,
+            snapshot: snapshot,
+            email: email,
+            token: token
+        )
+
+        for target in session.uploadTargets.sorted(by: { $0.trackNumber < $1.trackNumber }) {
+            guard let track = snapshot.tracks.first(where: { $0.trackNumber == target.trackNumber }) else {
+                continue
+            }
+
+            downloadStatus = "Uploading Track \(target.trackNumber)"
+            try await apiClient.uploadTapeTrack(track.url, to: target.uploadURL)
+        }
+
+        downloadStatus = "Processing Tape"
+        let tape = try await apiClient.completeTapeBackup(
+            id: session.tape.id,
+            email: email,
+            token: token
+        )
+
+        downloadStatus = nil
+        upsertTape(tape)
+        message = "Backed up \(snapshot.trackCount) OP-1 tape tracks."
+        return tape
+    }
+
+    private func loadTape(_ tape: RemoteTape) async throws {
+        guard let email = tokenStore.email, let token = tokenStore.token else {
+            throw APIClientError.missingCredentials
+        }
+
+        await monitor.refreshNow()
+
+        guard let mountPoint = monitor.mountPoint else {
+            throw OP1VolumeAccessError.notConnected
+        }
+
+        guard let access = volumeAccess.accessForMountedOP1(mountPoint) else {
+            throw OP1VolumeAccessError.notAssociated
+        }
+
+        defer { access.stop() }
+
+        let accessURL = access.url
+
+        if currentTapeNeedsBackup(mountPoint: accessURL) {
+            switch confirmOverwriteUnbackedTape() {
+            case .backUpFirst:
+                _ = try await backUpCurrentTape()
+                refreshTapes()
+            case .overwrite:
+                break
+            case .cancel:
+                return
+            }
+        }
+
+        downloadStatus = "Downloading Tape"
+        let downloadURL: URL
+        if let existingDownloadURL = tape.downloadURL {
+            downloadURL = existingDownloadURL
+        } else {
+            downloadURL = try await apiClient.fetchTapeDownloadURL(
+                id: tape.id,
+                email: email,
+                token: token
+            )
+        }
+        let (temporaryURL, _) = try await URLSession.shared.download(from: downloadURL)
+        let archiveURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("op1fun-\(UUID().uuidString).zip")
+        try FileManager.default.moveItem(at: temporaryURL, to: archiveURL)
+        defer {
+            try? FileManager.default.removeItem(at: archiveURL)
+        }
+
+        downloadStatus = "Writing OP-1 Tape"
+        try await Task.detached(priority: .userInitiated) {
+            try OP1TapeManager.restore(archiveURL: archiveURL, to: accessURL)
+        }.value
+
+        downloadStatus = nil
+    }
+
+    private func currentTapeNeedsBackup(mountPoint: URL) -> Bool {
+        guard let snapshot = try? OP1TapeManager.snapshot(mountPoint: mountPoint) else {
+            return false
+        }
+
+        return !tapes.contains { tape in
+            tape.fingerprint == snapshot.fingerprint
+        }
+    }
+
+    private enum TapeOverwriteChoice {
+        case backUpFirst
+        case overwrite
+        case cancel
+    }
+
+    private func confirmOverwriteUnbackedTape() -> TapeOverwriteChoice {
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.messageText = "Overwrite OP-1 tape?"
+        alert.informativeText = "The current OP-1 tape does not appear to be backed up to op1.fun. Loading this tape will replace the current OP-1 tape files."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Back Up First")
+        alert.addButton(withTitle: "Overwrite")
+        alert.addButton(withTitle: "Cancel")
+
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            return .backUpFirst
+        case .alertSecondButtonReturn:
+            return .overwrite
+        default:
+            return .cancel
+        }
+    }
+
+    private func defaultTapeBackupName() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy h:mm a"
+        return "OP-1 Tape \(formatter.string(from: Date()))"
+    }
+
+    private func upsertTape(_ tape: RemoteTape) {
+        if let index = tapes.firstIndex(where: { $0.id == tape.id }) {
+            tapes[index] = tape
+        } else {
+            tapes.insert(tape, at: 0)
         }
     }
 

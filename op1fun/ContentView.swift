@@ -190,10 +190,6 @@ private struct BrowserView: View {
             VStack(spacing: 0) {
                 if !model.hasAssociatedDisks {
                     DiskAssociationView(model: model, state: .noAssociatedDisks)
-                } else if !model.monitor.isConnected {
-                    DiskAssociationView(model: model, state: .noConnectedDisk)
-                } else if !model.isConnectedOP1Associated {
-                    DiskAssociationView(model: model, state: .unassociatedConnectedDisk)
                 } else {
                     HStack(spacing: 0) {
                         SidebarView(model: model)
@@ -202,10 +198,7 @@ private struct BrowserView: View {
                             .fill(Color.white.opacity(0.16))
                             .frame(width: 1)
 
-                        PatchListView(
-                            model: model,
-                            patches: model.patches(for: model.selectedCategory)
-                        )
+                        BrowserDetailView(model: model)
                     }
                 }
 
@@ -219,6 +212,29 @@ private struct BrowserView: View {
                         .padding(.vertical, 8)
                         .background(Color.black.opacity(0.18))
                 }
+            }
+        }
+    }
+}
+
+private struct BrowserDetailView: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        switch model.selectedSection {
+        case .tapes:
+            TapeListView(model: model)
+
+        case .patch:
+            if !model.monitor.isConnected {
+                DiskAssociationView(model: model, state: .noConnectedDisk)
+            } else if !model.isConnectedOP1Associated {
+                DiskAssociationView(model: model, state: .unassociatedConnectedDisk)
+            } else {
+                PatchListView(
+                    model: model,
+                    patches: model.patches(for: model.selectedCategory)
+                )
             }
         }
     }
@@ -309,7 +325,7 @@ private struct SidebarView: View {
         VStack(spacing: 0) {
             ForEach(PatchCategory.allCases) { category in
                 Button {
-                    model.selectedCategory = category
+                    model.selectPatchCategory(category)
                 } label: {
                     HStack(spacing: 10) {
                         OP1CategoryIcon(category: category, color: sidebarForeground(for: category))
@@ -340,13 +356,49 @@ private struct SidebarView: View {
                     .frame(height: 1)
             }
 
+            Button {
+                model.selectTapes()
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "recordingtape")
+                        .font(.system(size: 16, weight: .regular))
+                        .frame(width: 22, height: 18)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Tapes")
+                            .font(.heebo(size: 20, weight: .light))
+                            .textCase(.uppercase)
+
+                        Text("\(model.tapes.count) backup\(model.tapes.count == 1 ? "" : "s")")
+                            .font(.heebo(size: 12))
+                            .foregroundStyle(isTapesSelected ? Color.white.opacity(0.78) : Color.op1LightGray)
+                    }
+
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .frame(height: 66)
+                .foregroundStyle(isTapesSelected ? Color.white : Color.op1Red)
+                .background(isTapesSelected ? Color.op1Red : Color.clear)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.10))
+                .frame(height: 1)
+
             Spacer()
         }
         .frame(width: 200)
     }
 
+    private var isTapesSelected: Bool {
+        model.selectedSection == .tapes
+    }
+
     private func sidebarBackground(for category: PatchCategory) -> Color {
-        guard model.selectedCategory == category else {
+        guard model.selectedSection == .patch(category) else {
             return .clear
         }
 
@@ -358,7 +410,7 @@ private struct SidebarView: View {
     }
 
     private func sidebarForeground(for category: PatchCategory) -> Color {
-        if model.selectedCategory == category {
+        if model.selectedSection == .patch(category) {
             return category == .sampler ? .op1Black : .white
         }
 
@@ -366,7 +418,7 @@ private struct SidebarView: View {
     }
 
     private func sidebarSubtitleColor(for category: PatchCategory) -> Color {
-        if model.selectedCategory == category {
+        if model.selectedSection == .patch(category) {
             return category == .sampler ? .op1Black.opacity(0.7) : .white.opacity(0.78)
         }
 
@@ -435,6 +487,177 @@ private struct PatchListView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+}
+
+private struct TapeListView: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Text("Tapes")
+                    .font(.heebo(size: 14, weight: .bold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.op1Red)
+
+                if model.isLoadingTapes {
+                    ProgressView()
+                        .controlSize(.small)
+                        .scaleEffect(0.65)
+                }
+
+                Spacer()
+
+                Button {
+                    model.refreshTapes()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(TapeIconButtonStyle())
+                .help("Refresh tapes")
+
+                Button {
+                    model.saveTapeFromOP1()
+                } label: {
+                    Label("Save From OP-1", systemImage: "square.and.arrow.up")
+                }
+                .buttonStyle(OP1SmallButtonStyle(tint: .op1Red))
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 43)
+            .rowSeparator()
+
+            if model.tapes.isEmpty && !model.isLoadingTapes {
+                TapeEmptyView(model: model)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(model.tapes) { tape in
+                            TapeRowView(model: model, tape: tape)
+                                .rowSeparator()
+                        }
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            model.refreshTapes()
+        }
+    }
+}
+
+private struct TapeEmptyView: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Spacer()
+
+            Image(systemName: "recordingtape")
+                .font(.system(size: 52, weight: .light))
+                .foregroundStyle(Color.op1LightGray.opacity(0.9))
+
+            VStack(spacing: 6) {
+                Text("No tapes backed up")
+                    .font(.heebo(size: 18, weight: .bold))
+                    .foregroundStyle(.white)
+
+                Text("Save the current OP-1 tape to make it available here.")
+                    .font(.heebo(size: 13))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.op1LightGray)
+                    .frame(maxWidth: 280)
+            }
+
+            Button {
+                model.saveTapeFromOP1()
+            } label: {
+                Label("Save From OP-1", systemImage: "square.and.arrow.up")
+            }
+            .primaryOP1Button()
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+private struct TapeRowView: View {
+    @ObservedObject var model: AppModel
+    let tape: RemoteTape
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "recordingtape")
+                .font(.system(size: 17, weight: .regular))
+                .foregroundStyle(statusColor)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(tape.displayName)
+                    .font(.heebo(size: 14, weight: .medium))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Text(detailText)
+                    .font(.heebo(size: 11))
+                    .foregroundStyle(Color.op1LightGray)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            Text(tape.status.title)
+                .font(.heebo(size: 11, weight: .bold))
+                .textCase(.uppercase)
+                .foregroundStyle(statusColor)
+                .frame(width: 78, alignment: .trailing)
+
+            Button {
+                model.loadTapeToOP1(tape)
+            } label: {
+                Label("Load", systemImage: "arrow.down.to.line")
+                    .labelStyle(.iconOnly)
+            }
+            .buttonStyle(TapeIconButtonStyle())
+            .help("Load tape to OP-1")
+            .disabled(!tape.canLoadToOP1 || tape.status != .ready)
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 50)
+    }
+
+    private var statusColor: Color {
+        switch tape.status {
+        case .ready: return .op1Green
+        case .processing: return .op1Blue
+        case .failed: return .op1Red
+        case .unknown: return .op1LightGray
+        }
+    }
+
+    private var detailText: String {
+        var parts: [String] = []
+
+        if tape.trackCount > 0 {
+            parts.append("\(tape.trackCount) track\(tape.trackCount == 1 ? "" : "s")")
+        }
+
+        if let createdAt = tape.createdAt {
+            parts.append(Self.dateFormatter.string(from: createdAt))
+        }
+
+        return parts.isEmpty ? "Tape backup" : parts.joined(separator: " / ")
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
 }
 
 private struct ConnectedEmptyView: View {
@@ -581,6 +804,62 @@ private struct OP1PrimaryButtonStyle: ButtonStyle {
         }
 
         return .op1Green
+    }
+}
+
+private struct OP1SmallButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    let tint: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.heebo(size: 12, weight: .bold))
+            .textCase(.uppercase)
+            .foregroundStyle(foregroundColor(configuration: configuration))
+            .padding(.horizontal, 10)
+            .frame(height: 26)
+            .background(backgroundColor(configuration: configuration))
+            .overlay {
+                RoundedRectangle(cornerRadius: 0)
+                    .stroke(tint.opacity(isEnabled ? 1 : 0.4), lineWidth: 2)
+            }
+    }
+
+    private func foregroundColor(configuration: Configuration) -> Color {
+        if !isEnabled {
+            return tint.opacity(0.4)
+        }
+
+        return configuration.isPressed ? Color.op1Black : tint
+    }
+
+    private func backgroundColor(configuration: Configuration) -> Color {
+        guard isEnabled, configuration.isPressed else {
+            return .clear
+        }
+
+        return tint
+    }
+}
+
+private struct TapeIconButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(foregroundColor(configuration: configuration))
+            .frame(width: 26, height: 26)
+            .background(configuration.isPressed && isEnabled ? Color.op1Red : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 3))
+    }
+
+    private func foregroundColor(configuration: Configuration) -> Color {
+        if !isEnabled {
+            return Color.op1LightGray.opacity(0.4)
+        }
+
+        return configuration.isPressed ? Color.op1Black : Color.op1Red
     }
 }
 
