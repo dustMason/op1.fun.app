@@ -523,7 +523,7 @@ private struct TapeListView: View {
                 Button {
                     model.saveTapeFromOP1()
                 } label: {
-                    Label("Save From OP-1", systemImage: "square.and.arrow.up")
+                    Label("Upload to op1.fun", systemImage: "square.and.arrow.up")
                 }
                 .buttonStyle(OP1SmallButtonStyle(tint: .op1Red))
             }
@@ -566,18 +566,12 @@ private struct TapeEmptyView: View {
                 Text("No tapes backed up")
                     .font(.heebo(size: 18, weight: .bold))
                     .foregroundStyle(.white)
-
-                Text("Save the current OP-1 tape to make it available here.")
-                    .font(.heebo(size: 13))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Color.op1LightGray)
-                    .frame(maxWidth: 280)
             }
 
             Button {
                 model.saveTapeFromOP1()
             } label: {
-                Label("Save From OP-1", systemImage: "square.and.arrow.up")
+                Label("Upload to op1.fun", systemImage: "square.and.arrow.up")
             }
             .primaryOP1Button()
 
