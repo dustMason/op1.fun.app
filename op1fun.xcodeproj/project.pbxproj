@@ -20,6 +20,7 @@
 		10100000000000000000010B /* OP1VolumeAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10100000000000000000000E /* OP1VolumeAccess.swift */; };
 		10100000000000000000010C /* AppAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10100000000000000000000F /* AppAssets.swift */; };
 		10100000000000000000010D /* Resources in Resources */ = {isa = PBXBuildFile; fileRef = 101000000000000000000010 /* Resources */; };
+		10100000000000000000010E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 101000000000000000000011 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +40,7 @@
 		10100000000000000000000E /* OP1VolumeAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OP1VolumeAccess.swift; sourceTree = "<group>"; };
 		10100000000000000000000F /* AppAssets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAssets.swift; sourceTree = "<group>"; };
 		101000000000000000000010 /* Resources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Resources; sourceTree = "<group>"; };
+		101000000000000000000011 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -67,6 +69,7 @@
 				10100000000000000000000A /* Info.plist */,
 				10100000000000000000000B /* op1fun.entitlements */,
 				10100000000000000000000C /* op1fun.icns */,
+				101000000000000000000011 /* PrivacyInfo.xcprivacy */,
 				101000000000000000000010 /* Resources */,
 			);
 			path = op1fun;
@@ -138,6 +141,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				10100000000000000000010A /* op1fun.icns in Resources */,
+				10100000000000000000010E /* PrivacyInfo.xcprivacy in Resources */,
 				10100000000000000000010D /* Resources in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -285,8 +289,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = op1fun/op1fun.entitlements;
-				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -298,7 +302,8 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.fiftyfootfoghorn.op1fun;
-				PRODUCT_NAME = "op1.fun";
+				PRODUCT_NAME = op1.fun;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -308,8 +313,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = op1fun/op1fun.entitlements;
-				CODE_SIGN_IDENTITY = "-";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -321,7 +326,8 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.fiftyfootfoghorn.op1fun;
-				PRODUCT_NAME = "op1.fun";
+				PRODUCT_NAME = op1.fun;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
