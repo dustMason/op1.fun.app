@@ -10,9 +10,11 @@ final class AppModel: ObservableObject {
     @Published var loginError = ""
     @Published var isLoggingIn = false
     @Published var isLoadingTapes = false
+    @Published var isLoadingPacks = false
     @Published var downloadStatus: String?
     @Published var message: String?
     @Published private(set) var tapes: [RemoteTape] = []
+    @Published private(set) var packs: [RemotePack] = []
     @Published private(set) var associatedDisks: [OP1DiskAssociation]
 
     let monitor = OP1VolumeMonitor()
@@ -61,6 +63,7 @@ final class AppModel: ObservableObject {
     func start() {
         monitor.start()
         refreshTapes()
+        refreshPacks()
     }
 
     func stop() {
@@ -83,22 +86,30 @@ final class AppModel: ObservableObject {
         refreshTapes()
     }
 
+    func selectPacks() {
+        selectedSection = .packs
+        refreshPacks()
+    }
+
     func logIn(email: String, password: String) {
         loginError = ""
         isLoggingIn = true
 
         Task {
             do {
-                let token = try await apiClient.logIn(email: email, password: password)
+                let session = try await apiClient.logIn(email: email, password: password)
                 tokenStore.email = email
-                tokenStore.token = token
+                tokenStore.token = session.token
+                tokenStore.userID = session.user?.id
+                tokenStore.username = session.user?.username
                 isLoggingIn = false
                 currentView = .browser
                 message = nil
                 refreshTapes()
+                refreshPacks()
 
                 Task {
-                    try? await apiClient.enableAppFeatureFlag(email: email, token: token)
+                    try? await apiClient.enableAppFeatureFlag(email: email, token: session.token)
                 }
 
                 if let pendingURL {
@@ -119,6 +130,7 @@ final class AppModel: ObservableObject {
         message = nil
         pendingURL = nil
         tapes = []
+        packs = []
     }
 
     func refreshOP1() {
@@ -169,6 +181,36 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func refreshPacks() {
+        guard let email = tokenStore.email, let token = tokenStore.token else {
+            return
+        }
+
+        guard let userID = tokenStore.userID else {
+            if selectedSection == .packs {
+                message = "Log out and back in to load your op1.fun packs."
+            }
+            return
+        }
+
+        guard !isLoadingPacks else {
+            return
+        }
+
+        isLoadingPacks = true
+        Task {
+            do {
+                packs = try await apiClient.fetchPacks(userID: userID, email: email, token: token)
+                isLoadingPacks = false
+            } catch {
+                isLoadingPacks = false
+                if selectedSection == .packs {
+                    message = error.localizedDescription
+                }
+            }
+        }
+    }
+
     func saveTapeFromOP1() {
         Task {
             do {
@@ -188,6 +230,24 @@ final class AppModel: ObservableObject {
                 try await loadTape(tape)
                 await monitor.refreshNow()
                 message = "Loaded \(tape.displayName) to OP-1."
+            } catch {
+                downloadStatus = nil
+                message = error.localizedDescription
+            }
+        }
+    }
+
+    func downloadPackToOP1(_ pack: RemotePack) {
+        Task {
+            do {
+                let result = try await downloadPack(pack)
+                await monitor.refreshNow()
+
+                if result.skipped > 0 {
+                    message = "Downloaded \(result.saved) patches from \(pack.name). Skipped \(result.skipped) existing files."
+                } else {
+                    message = "Downloaded \(result.saved) patches from \(pack.name)."
+                }
             } catch {
                 downloadStatus = nil
                 message = error.localizedDescription
@@ -249,12 +309,28 @@ final class AppModel: ObservableObject {
                 let pack = try await apiClient.fetchPack(path: link.path, email: email, token: token)
                 downloadStatus = "Downloading Pack: \(pack.name)"
 
+                var saved = 0
+                var skipped = 0
                 for patch in pack.patches {
-                    try await download(patch: patch, packID: pack.id, mountPoint: access.url)
+                    let didSave = try await download(
+                        patch: patch,
+                        packID: pack.id,
+                        mountPoint: access.url,
+                        duplicatePolicy: .skipExisting
+                    )
+                    if didSave {
+                        saved += 1
+                    } else {
+                        skipped += 1
+                    }
                 }
 
                 downloadStatus = nil
-                message = "Downloaded \(pack.name)."
+                if skipped > 0 {
+                    message = "Downloaded \(saved) patches from \(pack.name). Skipped \(skipped) existing files."
+                } else {
+                    message = "Downloaded \(pack.name)."
+                }
 
             default:
                 message = "Unsupported op1.fun link."
@@ -324,6 +400,66 @@ final class AppModel: ObservableObject {
         upsertTape(tape)
         message = "Backed up \(snapshot.trackCount) OP-1 tape tracks."
         return tape
+    }
+
+    private struct PackDownloadResult {
+        let saved: Int
+        let skipped: Int
+    }
+
+    private func downloadPack(_ pack: RemotePack) async throws -> PackDownloadResult {
+        guard let email = tokenStore.email, let token = tokenStore.token else {
+            throw APIClientError.missingCredentials
+        }
+
+        await monitor.refreshNow()
+
+        guard let mountPoint = monitor.mountPoint else {
+            throw OP1VolumeAccessError.notConnected
+        }
+
+        guard let access = volumeAccess.accessForMountedOP1(mountPoint) else {
+            throw OP1VolumeAccessError.notAssociated
+        }
+
+        defer { access.stop() }
+
+        let detailedPack: RemotePack
+        if pack.patches.isEmpty {
+            let path: String
+            if let selfPath = pack.selfPath {
+                path = selfPath
+            } else if let userID = pack.userID ?? tokenStore.userID {
+                path = "users/\(userID)/packs/\(pack.id)"
+            } else {
+                throw APIClientError.server("Log out and back in to load your op1.fun packs.")
+            }
+
+            detailedPack = try await apiClient.fetchPack(path: path, email: email, token: token)
+        } else {
+            detailedPack = pack
+        }
+
+        downloadStatus = "Downloading Pack: \(detailedPack.name)"
+
+        var saved = 0
+        var skipped = 0
+        for patch in detailedPack.patches {
+            let didSave = try await download(
+                patch: patch,
+                packID: detailedPack.id,
+                mountPoint: access.url,
+                duplicatePolicy: .skipExisting
+            )
+            if didSave {
+                saved += 1
+            } else {
+                skipped += 1
+            }
+        }
+
+        downloadStatus = nil
+        return PackDownloadResult(saved: saved, skipped: skipped)
     }
 
     private func loadTape(_ tape: RemoteTape) async throws {
@@ -435,7 +571,18 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private func download(patch: RemotePatch, packID: String?, mountPoint: URL) async throws {
+    private enum DuplicatePatchPolicy {
+        case rename
+        case skipExisting
+    }
+
+    @discardableResult
+    private func download(
+        patch: RemotePatch,
+        packID: String?,
+        mountPoint: URL,
+        duplicatePolicy: DuplicatePatchPolicy = .rename
+    ) async throws -> Bool {
         downloadStatus = "Downloading Patch: \(patch.name)"
 
         let categoryDirectory = patch.patchType == "drum" ? "drum" : "synth"
@@ -452,11 +599,26 @@ final class AppModel: ObservableObject {
 
         let (temporaryURL, response) = try await URLSession.shared.download(from: patch.fileURL)
         let filename = downloadFilename(for: patch, response: response)
-        let destinationURL = availableDestinationURL(in: destinationDirectory, filename: filename)
+        let destinationURL: URL
+
+        switch duplicatePolicy {
+        case .rename:
+            destinationURL = availableDestinationURL(in: destinationDirectory, filename: filename)
+        case .skipExisting:
+            let originalURL = destinationDirectory.appendingPathComponent(filename, isDirectory: false)
+            guard !FileManager.default.fileExists(atPath: originalURL.path) else {
+                try? FileManager.default.removeItem(at: temporaryURL)
+                downloadStatus = nil
+                return false
+            }
+
+            destinationURL = originalURL
+        }
 
         try FileManager.default.copyItem(at: temporaryURL, to: destinationURL)
         try? FileManager.default.removeItem(at: temporaryURL)
         downloadStatus = nil
+        return true
     }
 
     private func downloadFilename(for patch: RemotePatch, response: URLResponse) -> String {

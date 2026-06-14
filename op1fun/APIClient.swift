@@ -20,7 +20,7 @@ enum APIClientError: LocalizedError {
 final class APIClient {
     private let baseURL = URL(string: "https://api.op1.fun/v1/")!
 
-    func logIn(email: String, password: String) async throws -> String {
+    func logIn(email: String, password: String) async throws -> LoginSession {
         let body: [String: Any] = [
             "email": email,
             "password": password
@@ -32,7 +32,7 @@ final class APIClient {
         }
 
         if let token = object["api_token"] as? String, !token.isEmpty {
-            return token
+            return LoginSession(token: token, user: JSONAPI.parseUser(from: object))
         }
 
         if let error = object["error"] as? String {
@@ -59,6 +59,11 @@ final class APIClient {
     func fetchPack(path: String, email: String, token: String) async throws -> RemotePack {
         let data = try await get(path: path, email: email, token: token)
         return try JSONAPI.parsePackRoot(data)
+    }
+
+    func fetchPacks(userID: String, email: String, token: String) async throws -> [RemotePack] {
+        let data = try await get(path: "users/\(userID)/packs", email: email, token: token)
+        return try JSONAPI.parsePackListRoot(data)
     }
 
     func fetchTapes(email: String, token: String) async throws -> [RemoteTape] {

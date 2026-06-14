@@ -226,6 +226,9 @@ private struct BrowserDetailView: View {
 
     var body: some View {
         switch model.selectedSection {
+        case .packs:
+            PackListView(model: model)
+
         case .tapes:
             TapeListView(model: model)
 
@@ -361,6 +364,38 @@ private struct SidebarView: View {
             }
 
             Button {
+                model.selectPacks()
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "shippingbox")
+                        .font(.system(size: 16, weight: .regular))
+                        .frame(width: 22, height: 18)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Packs")
+                            .font(.heebo(size: 20, weight: .light))
+                            .textCase(.uppercase)
+
+                        Text("\(model.packs.count) pack\(model.packs.count == 1 ? "" : "s")")
+                            .font(.heebo(size: 12))
+                            .foregroundStyle(isPacksSelected ? Color.white.opacity(0.78) : Color.op1LightGray)
+                    }
+
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .frame(height: 66)
+                .foregroundStyle(isPacksSelected ? Color.white : Color.op1Blue)
+                .background(isPacksSelected ? Color.op1Blue : Color.clear)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.10))
+                .frame(height: 1)
+
+            Button {
                 model.selectTapes()
             } label: {
                 HStack(spacing: 10) {
@@ -399,6 +434,10 @@ private struct SidebarView: View {
 
     private var isTapesSelected: Bool {
         model.selectedSection == .tapes
+    }
+
+    private var isPacksSelected: Bool {
+        model.selectedSection == .packs
     }
 
     private func sidebarBackground(for category: PatchCategory) -> Color {
@@ -548,6 +587,130 @@ private struct TapeListView: View {
         .onAppear {
             model.refreshTapes()
         }
+    }
+}
+
+private struct PackListView: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Text("Packs")
+                    .font(.heebo(size: 14, weight: .bold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.op1Blue)
+
+                if model.isLoadingPacks {
+                    ProgressView()
+                        .controlSize(.small)
+                        .scaleEffect(0.65)
+                }
+
+                Spacer()
+
+                Button {
+                    model.refreshPacks()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(PackIconButtonStyle())
+                .help("Refresh packs")
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 43)
+            .rowSeparator()
+
+            if model.packs.isEmpty && !model.isLoadingPacks {
+                PackEmptyView(model: model)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(model.packs, id: \.id) { pack in
+                            PackRowView(model: model, pack: pack)
+                                .rowSeparator()
+                        }
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            model.refreshPacks()
+        }
+    }
+}
+
+private struct PackEmptyView: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Spacer()
+
+            Image(systemName: "shippingbox")
+                .font(.system(size: 52, weight: .light))
+                .foregroundStyle(Color.op1LightGray.opacity(0.9))
+
+            Text("No packs found")
+                .font(.heebo(size: 18, weight: .bold))
+                .foregroundStyle(.white)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+private struct PackRowView: View {
+    @ObservedObject var model: AppModel
+    let pack: RemotePack
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "shippingbox")
+                .font(.system(size: 17, weight: .regular))
+                .foregroundStyle(Color.op1Blue)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(pack.name)
+                    .font(.heebo(size: 14, weight: .medium))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Text(detailText)
+                    .font(.heebo(size: 11))
+                    .foregroundStyle(Color.op1LightGray)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            Button {
+                model.downloadPackToOP1(pack)
+            } label: {
+                Label("Download", systemImage: "arrow.down.to.line")
+                    .labelStyle(.iconOnly)
+            }
+            .buttonStyle(PackIconButtonStyle())
+            .help("Download pack to OP-1")
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 50)
+    }
+
+    private var detailText: String {
+        if pack.patchCount > 0 {
+            return "\(pack.patchCount) patch\(pack.patchCount == 1 ? "" : "es")"
+        }
+
+        if let description = pack.description, !description.isEmpty {
+            return description
+        }
+
+        return "Pack"
     }
 }
 
@@ -858,6 +1021,27 @@ private struct TapeIconButtonStyle: ButtonStyle {
         }
 
         return configuration.isPressed ? Color.op1Black : Color.op1Red
+    }
+}
+
+private struct PackIconButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(foregroundColor(configuration: configuration))
+            .frame(width: 26, height: 26)
+            .background(configuration.isPressed && isEnabled ? Color.op1Blue : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 3))
+    }
+
+    private func foregroundColor(configuration: Configuration) -> Color {
+        if !isEnabled {
+            return Color.op1LightGray.opacity(0.4)
+        }
+
+        return configuration.isPressed ? Color.op1Black : Color.op1Blue
     }
 }
 

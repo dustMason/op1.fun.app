@@ -39,6 +39,7 @@ enum PatchCategory: String, CaseIterable, Identifiable {
 
 enum BrowserSection: Equatable {
     case patch(PatchCategory)
+    case packs
     case tapes
 }
 
@@ -73,7 +74,26 @@ struct RemotePatch {
 struct RemotePack {
     let id: String
     let name: String
+    let description: String?
+    let userID: String?
     let patches: [RemotePatch]
+    let listedPatchCount: Int?
+    let selfPath: String?
+    let downloadURL: URL?
+
+    var patchCount: Int {
+        listedPatchCount ?? patches.count
+    }
+}
+
+struct RemoteUser {
+    let id: String
+    let username: String
+}
+
+struct LoginSession {
+    let token: String
+    let user: RemoteUser?
 }
 
 enum TapeStatus: String {

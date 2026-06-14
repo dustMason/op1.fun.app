@@ -33,54 +33,48 @@ enum JSONAPI {
     static func parsePackRoot(_ data: Data) throws -> RemotePack {
         let object = try rootObject(from: data)
 
-        guard
-            let resource = object["data"] as? [String: Any],
-            let id = resource["id"] as? String
-        else {
+        guard let resource = object["data"] as? [String: Any] else {
             throw JSONAPIError.invalidResource
         }
 
-        let attributes = resource["attributes"] as? [String: Any] ?? [:]
-        let name = attributes["name"] as? String ?? id
         let included = object["included"] as? [[String: Any]] ?? []
-        let includedPatches = Dictionary(uniqueKeysWithValues: included.compactMap { resource -> (String, [String: Any])? in
-            guard
-                let type = resource["type"] as? String,
-                type == "patches",
-                let id = resource["id"] as? String
-            else {
-                return nil
-            }
+        return try parsePack(resource, included: included, requiresPatches: true)
+    }
 
-            return ((["patches", id].joined(separator: ":")), resource)
-        })
-
-        let relationshipData =
-            (((resource["relationships"] as? [String: Any])?["patches"] as? [String: Any])?["data"] as? [[String: Any]]) ?? []
-
-        var patches: [RemotePatch] = []
-        for reference in relationshipData {
-            guard
-                let referenceID = reference["id"] as? String,
-                let patchResource = includedPatches[["patches", referenceID].joined(separator: ":")]
-            else {
-                continue
-            }
-
-            patches.append(try parsePatch(patchResource))
+    static func parsePackListRoot(_ data: Data) throws -> [RemotePack] {
+        let object = try rootObject(from: data)
+        guard let resources = object["data"] as? [[String: Any]] else {
+            throw JSONAPIError.invalidResource
         }
 
-        if patches.isEmpty {
-            patches = try included
-                .filter { ($0["type"] as? String) == "patches" }
-                .map(parsePatch)
+        let included = object["included"] as? [[String: Any]] ?? []
+        return try resources.map { resource in
+            try parsePack(resource, included: included, requiresPatches: false)
+        }
+    }
+
+    static func parseUser(from object: [String: Any]) -> RemoteUser? {
+        if let user = object["user"] as? [String: Any] {
+            return parseUser(user)
         }
 
-        guard !patches.isEmpty else {
-            throw JSONAPIError.missingPackPatches
+        if let resource = object["data"] as? [String: Any],
+           (resource["type"] as? String) == "users" {
+            return parseUser(resource)
         }
 
-        return RemotePack(id: id, name: name, patches: patches)
+        if let id =
+            stringValue(named: "user-id", in: object) ??
+            stringValue(named: "user_id", in: object) ??
+            stringValue(named: "userID", in: object) ??
+            stringValue(named: "username", in: object) {
+            return RemoteUser(
+                id: id,
+                username: stringValue(named: "username", in: object) ?? id
+            )
+        }
+
+        return nil
     }
 
     static func parseTapeListRoot(_ data: Data) throws -> [RemoteTape] {
@@ -165,6 +159,85 @@ enum JSONAPI {
         }
 
         return RemotePatch(id: id, name: name, patchType: patchType, fileURL: fileURL)
+    }
+
+    private static func parsePack(
+        _ resource: [String: Any],
+        included: [[String: Any]],
+        requiresPatches: Bool
+    ) throws -> RemotePack {
+        guard let id = resource["id"] as? String else {
+            throw JSONAPIError.invalidResource
+        }
+
+        let attributes = resource["attributes"] as? [String: Any] ?? [:]
+        let name = attributes["name"] as? String ?? id
+        let includedPatches = Dictionary(uniqueKeysWithValues: included.compactMap { resource -> (String, [String: Any])? in
+            guard
+                let type = resource["type"] as? String,
+                type == "patches",
+                let id = resource["id"] as? String
+            else {
+                return nil
+            }
+
+            return ((["patches", id].joined(separator: ":")), resource)
+        })
+
+        let relationshipData =
+            (((resource["relationships"] as? [String: Any])?["patches"] as? [String: Any])?["data"] as? [[String: Any]]) ?? []
+
+        var patches: [RemotePatch] = []
+        for reference in relationshipData {
+            guard
+                let referenceID = reference["id"] as? String,
+                let patchResource = includedPatches[["patches", referenceID].joined(separator: ":")]
+            else {
+                continue
+            }
+
+            patches.append(try parsePatch(patchResource))
+        }
+
+        if patches.isEmpty, requiresPatches {
+            patches = try included
+                .filter { ($0["type"] as? String) == "patches" }
+                .map(parsePatch)
+        }
+
+        if requiresPatches, patches.isEmpty {
+            throw JSONAPIError.missingPackPatches
+        }
+
+        return RemotePack(
+            id: id,
+            name: name,
+            description: stringValue(named: "description", in: attributes),
+            userID: stringValue(named: "user-id", in: attributes) ?? stringValue(named: "user_id", in: attributes),
+            patches: patches,
+            listedPatchCount: relationshipData.isEmpty ? nil : relationshipData.count,
+            selfPath: apiPath(from: link(named: "self", in: resource)),
+            downloadURL: link(named: "download", in: resource)
+        )
+    }
+
+    private static func parseUser(_ object: [String: Any]) -> RemoteUser? {
+        if let id = object["id"] as? String {
+            let attributes = object["attributes"] as? [String: Any] ?? object
+            return RemoteUser(
+                id: id,
+                username: stringValue(named: "username", in: attributes) ?? id
+            )
+        }
+
+        guard let id = stringValue(named: "id", in: object) ?? stringValue(named: "slug", in: object) else {
+            return nil
+        }
+
+        return RemoteUser(
+            id: id,
+            username: stringValue(named: "username", in: object) ?? id
+        )
     }
 
     private static func parseTape(_ resource: [String: Any]) throws -> RemoteTape {
@@ -272,5 +345,21 @@ enum JSONAPI {
         }
 
         return nil
+    }
+
+    private static func apiPath(from url: URL?) -> String? {
+        guard let url else {
+            return nil
+        }
+
+        let parts = url.path
+            .split(separator: "/")
+            .map(String.init)
+
+        guard let index = parts.firstIndex(of: "v1") else {
+            return url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        }
+
+        return parts[(index + 1)...].joined(separator: "/")
     }
 }
