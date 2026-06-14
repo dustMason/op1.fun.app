@@ -74,7 +74,7 @@ final class StatusController: NSObject, NSPopoverDelegate {
         super.init()
 
         if let button = statusItem.button {
-            button.image = Self.makeStatusIcon()
+            button.image = Self.statusIcon()
             button.image?.isTemplate = true
             button.toolTip = "op1.fun"
             button.action = #selector(togglePopover(_:))
@@ -104,37 +104,16 @@ final class StatusController: NSObject, NSPopoverDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    private static func makeStatusIcon() -> NSImage {
-        let image = NSImage(size: NSSize(width: 18, height: 18))
-        image.lockFocus()
+    private static func statusIcon() -> NSImage {
+        guard let url = Bundle.main.url(
+            forResource: "status-icon@2x",
+            withExtension: "png",
+            subdirectory: "Resources/Images"
+        ), let image = NSImage(contentsOf: url) else {
+            fatalError("Missing status-icon@2x.png")
+        }
 
-        NSColor.black.setStroke()
-        let path = NSBezierPath()
-        path.lineWidth = 1.8
-        path.lineCapStyle = .round
-        path.lineJoinStyle = .round
-
-        path.move(to: NSPoint(x: 2.5, y: 9))
-        path.line(to: NSPoint(x: 4.5, y: 9))
-        path.curve(
-            to: NSPoint(x: 7.5, y: 9),
-            controlPoint1: NSPoint(x: 5, y: 14),
-            controlPoint2: NSPoint(x: 7, y: 14)
-        )
-        path.curve(
-            to: NSPoint(x: 10.5, y: 9),
-            controlPoint1: NSPoint(x: 8, y: 4),
-            controlPoint2: NSPoint(x: 10, y: 4)
-        )
-        path.curve(
-            to: NSPoint(x: 13.5, y: 9),
-            controlPoint1: NSPoint(x: 11, y: 14),
-            controlPoint2: NSPoint(x: 13, y: 14)
-        )
-        path.line(to: NSPoint(x: 15.5, y: 9))
-        path.stroke()
-
-        image.unlockFocus()
+        image.size = NSSize(width: 21, height: 20)
         image.isTemplate = true
         return image
     }
