@@ -147,6 +147,8 @@ private struct LoginView: View {
                             TextField("", text: $email)
                                 .textFieldStyle(.plain)
                                 .fieldStyle()
+                                .textContentType(.username)
+                                .accessibilityLabel("Email")
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
@@ -155,6 +157,8 @@ private struct LoginView: View {
                             SecureField("", text: $password)
                                 .textFieldStyle(.plain)
                                 .fieldStyle()
+                                .textContentType(.password)
+                                .accessibilityLabel("Password")
                         }
 
                         if !model.loginError.isEmpty {
