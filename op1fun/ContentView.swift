@@ -78,12 +78,15 @@ private struct HeaderView: View {
                     model.quit()
                 }
             } label: {
-                OP1GearIcon()
-                    .fill(Color.white, style: FillStyle(eoFill: true))
-                    .frame(width: 14, height: 14)
+                Image(systemName: "gearshape")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.white)
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
+            .help("Settings")
         }
         .padding(.horizontal, 16)
         .frame(height: 40)
