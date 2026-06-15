@@ -2,7 +2,7 @@
 
 Native macOS menu-bar companion app for [op1.fun](https://op1.fun).
 
-This is a Swift/AppKit/SwiftUI rewrite of the old Electron app. It keeps the same core behavior:
+This is a Swift/AppKit/SwiftUI rewrite of the old Electron app. It is fully native and has a tiny runtime footprint compared with the older Electron build. It keeps the same core behavior:
 
 - Finds a mounted OP-1 in disk mode.
 - Scans `synth` and `drum` patch folders, excluding OP-1 `user` preset folders.
@@ -20,4 +20,4 @@ The project uses ad-hoc signing by default so it can build locally without a con
 
 ## Sandboxing
 
-The app includes App Sandbox entitlements for outbound network access and removable-volume read/write access, which are required for API calls and writing to an OP-1 mounted as an external volume.
+The app includes App Sandbox entitlements for outbound network access, user-selected read/write access, and app-scoped security bookmarks. The user-selected disk permission is required for writing to an OP-1 mounted as an external volume.

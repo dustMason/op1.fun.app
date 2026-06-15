@@ -434,13 +434,13 @@ final class OP1VolumeAccess {
     private func requestAssociationURL() -> URL? {
         let panel = NSOpenPanel()
 
-        panel.title = "Select OP-1 Disk"
-        panel.prompt = "Use This Disk"
+        panel.title = "Grant OP-1 Access"
+        panel.message = "Choose the mounted OP-1 volume. macOS will grant op1.fun read/write access only through this standard file picker."
+        panel.prompt = "Grant Access"
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         panel.canCreateDirectories = false
-        panel.directoryURL = URL(fileURLWithPath: "/Volumes", isDirectory: true)
 
         NSApp.activate(ignoringOtherApps: true)
 
@@ -452,52 +452,6 @@ final class OP1VolumeAccess {
     }
 
     private static func volumeUUID(for url: URL) -> String? {
-        if let values = try? url.resourceValues(forKeys: [.volumeUUIDStringKey]),
-           let uuid = values.volumeUUIDString {
-            return uuid
-        }
-
-        let output = shellOutput(
-            executableURL: URL(fileURLWithPath: "/usr/sbin/diskutil"),
-            arguments: ["info", url.path]
-        )
-
-        return output?
-            .split(separator: "\n")
-            .compactMap { line -> String? in
-                let text = String(line)
-                guard text.contains("Volume UUID:") else {
-                    return nil
-                }
-
-                return text
-                    .split(separator: ":", maxSplits: 1)
-                    .last?
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-            .first
-    }
-
-    private static func shellOutput(executableURL: URL, arguments: [String]) -> String? {
-        let pipe = Pipe()
-        let process = Process()
-        process.executableURL = executableURL
-        process.arguments = arguments
-        process.standardOutput = pipe
-        process.standardError = Pipe()
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-        } catch {
-            return nil
-        }
-
-        guard process.terminationStatus == 0 else {
-            return nil
-        }
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        return String(data: data, encoding: .utf8)
+        try? url.resourceValues(forKeys: [.volumeUUIDStringKey]).volumeUUIDString
     }
 }

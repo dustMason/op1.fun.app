@@ -81,10 +81,6 @@ enum OP1VolumeScanner {
     private static func findMountPoint() -> URL? {
         let fileManager = FileManager.default
 
-        if let directURL = URL(string: "file:///Volumes/OP-1"), fileManager.fileExists(atPath: directURL.path) {
-            return directURL
-        }
-
         let resourceKeys: [URLResourceKey] = [
             .volumeNameKey,
             .volumeLocalizedNameKey

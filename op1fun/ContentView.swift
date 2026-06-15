@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct ContentView: View {
@@ -59,31 +60,9 @@ private struct HeaderView: View {
                     .scaleEffect(0.65)
             }
 
-            Menu {
-                Button("Account Settings") {
-                    model.currentView = .login
-                }
-
-                Button("Refresh OP-1") {
-                    model.refreshOP1()
-                }
-
-                Button("Select OP-1 Disk") {
-                    model.associateOP1Disk()
-                }
-
-                Divider()
-
-                Button("Quit") {
-                    model.quit()
-                }
-            } label: {
-                OP1GearIcon()
-                    .fill(Color.white, style: FillStyle(eoFill: true))
-                    .frame(width: 14, height: 14)
-            }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
+            SettingsMenuButton(model: model)
+                .frame(width: 24, height: 24)
+            .help("Settings")
         }
         .padding(.horizontal, 16)
         .frame(height: 40)
@@ -92,6 +71,80 @@ private struct HeaderView: View {
             Rectangle()
                 .fill(Color.white.opacity(0.16))
                 .frame(height: 1)
+        }
+    }
+}
+
+private struct SettingsMenuButton: NSViewRepresentable {
+    @ObservedObject var model: AppModel
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(model: model)
+    }
+
+    func makeNSView(context: Context) -> NSButton {
+        let button = NSButton()
+        button.image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Settings")
+        button.image?.isTemplate = true
+        button.contentTintColor = .white
+        button.imagePosition = .imageOnly
+        button.isBordered = false
+        button.bezelStyle = .regularSquare
+        button.target = context.coordinator
+        button.action = #selector(Coordinator.showMenu(_:))
+        return button
+    }
+
+    func updateNSView(_ button: NSButton, context: Context) {
+        button.contentTintColor = .white
+    }
+
+    final class Coordinator: NSObject {
+        private let model: AppModel
+
+        init(model: AppModel) {
+            self.model = model
+        }
+
+        @objc func showMenu(_ sender: NSButton) {
+            let menu = NSMenu()
+            menu.autoenablesItems = false
+            menu.addItem(item(title: "Account Settings", action: #selector(showAccountSettings)))
+            menu.addItem(item(title: "Refresh OP-1", action: #selector(refreshOP1)))
+            menu.addItem(item(title: "Select OP-1 Disk", action: #selector(selectOP1Disk)))
+            menu.addItem(.separator())
+            menu.addItem(item(title: "Quit", action: #selector(quit)))
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
+        }
+
+        private func item(title: String, action: Selector) -> NSMenuItem {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+            item.target = self
+            return item
+        }
+
+        @objc private func showAccountSettings() {
+            Task { @MainActor in
+                model.currentView = .login
+            }
+        }
+
+        @objc private func refreshOP1() {
+            Task { @MainActor in
+                model.refreshOP1()
+            }
+        }
+
+        @objc private func selectOP1Disk() {
+            Task { @MainActor in
+                model.associateOP1Disk()
+            }
+        }
+
+        @objc private func quit() {
+            Task { @MainActor in
+                model.quit()
+            }
         }
     }
 }
@@ -118,7 +171,7 @@ private struct LoginView: View {
                         .font(.heebo(size: 23, weight: .bold))
                         .foregroundStyle(.white)
 
-                    Text("v 1.0")
+                    Text("v 2.0")
                         .font(.heebo(size: 13))
                 }
                 .frame(width: 210, alignment: .leading)
