@@ -2,7 +2,7 @@
 
 Native macOS menu-bar companion app for [op1.fun](https://op1.fun).
 
-This is a Swift/AppKit/SwiftUI rewrite of the old Electron app. It keeps the same core behavior:
+This is a Swift/AppKit/SwiftUI rewrite of the old Electron app. It is fully native and has a tiny runtime footprint compared with the older Electron build. It keeps the same core behavior:
 
 - Finds a mounted OP-1 in disk mode.
 - Scans `synth` and `drum` patch folders, excluding OP-1 `user` preset folders.
