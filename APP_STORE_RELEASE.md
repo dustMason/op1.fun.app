@@ -5,7 +5,7 @@
 - App name: `op1.fun`
 - Bundle ID: `com.fiftyfootfoghorn.op1fun`
 - Version: `2.0`
-- Build: `1`
+- Build: `3`
 - Minimum macOS: `13.0`
 - Category: Music
 - Signing: Automatic signing is enabled. Select the paid Apple Developer team once Apple finishes renewing the account.
