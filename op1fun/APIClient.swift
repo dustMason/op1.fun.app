@@ -20,7 +20,7 @@ enum APIClientError: LocalizedError {
 final class APIClient {
     private let baseURL = URL(string: "https://api.op1.fun/v1/")!
 
-    func logIn(email: String, password: String) async throws -> String {
+    func logIn(email: String, password: String) async throws -> LoginSession {
         let body: [String: Any] = [
             "email": email,
             "password": password
@@ -32,7 +32,7 @@ final class APIClient {
         }
 
         if let token = object["api_token"] as? String, !token.isEmpty {
-            return token
+            return LoginSession(token: token, user: JSONAPI.parseUser(from: object))
         }
 
         if let error = object["error"] as? String {
@@ -59,6 +59,75 @@ final class APIClient {
     func fetchPack(path: String, email: String, token: String) async throws -> RemotePack {
         let data = try await get(path: path, email: email, token: token)
         return try JSONAPI.parsePackRoot(data)
+    }
+
+    func fetchPacks(userID: String, email: String, token: String) async throws -> [RemotePack] {
+        let data = try await get(path: "users/\(userID)/packs", email: email, token: token)
+        return try JSONAPI.parsePackListRoot(data)
+    }
+
+    func fetchTapes(email: String, token: String) async throws -> [RemoteTape] {
+        let data = try await get(path: "tapes", email: email, token: token)
+        return try JSONAPI.parseTapeListRoot(data)
+    }
+
+    func createTapeBackup(
+        name: String,
+        snapshot: LocalTapeSnapshot,
+        email: String,
+        token: String
+    ) async throws -> TapeUploadSession {
+        let tracks = snapshot.tracks.map { track -> [String: Any] in
+            [
+                "track_number": track.trackNumber,
+                "filename": track.filename,
+                "byte_count": track.byteCount,
+                "sha256": track.sha256
+            ]
+        }
+        let body: [String: Any] = [
+            "data": [
+                "type": "tapes",
+                "attributes": [
+                    "name": name,
+                    "fingerprint": snapshot.fingerprint,
+                    "tracks": tracks
+                ]
+            ]
+        ]
+
+        let data = try await post(path: "tapes", body: body, email: email, token: token)
+        return try JSONAPI.parseTapeUploadSessionRoot(data)
+    }
+
+    func completeTapeBackup(id: String, email: String, token: String) async throws -> RemoteTape {
+        let body: [String: Any] = [
+            "data": [
+                "type": "tapes",
+                "id": id
+            ]
+        ]
+        let data = try await post(path: "tapes/\(id)/complete", body: body, email: email, token: token)
+        return try JSONAPI.parseTapeRoot(data)
+    }
+
+    func fetchTapeDownloadURL(id: String, email: String, token: String) async throws -> URL {
+        let data = try await get(path: "tapes/\(id)/download", email: email, token: token)
+        return try JSONAPI.parseTapeDownloadRoot(data)
+    }
+
+    func uploadTapeTrack(_ fileURL: URL, to uploadURL: URL) async throws {
+        var request = URLRequest(url: uploadURL)
+        request.httpMethod = "PUT"
+
+        let (_, response) = try await URLSession.shared.upload(for: request, fromFile: fileURL)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIClientError.invalidResponse
+        }
+
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw APIClientError.server("Tape upload returned HTTP \(httpResponse.statusCode).")
+        }
     }
 
     private func get(path: String, email: String, token: String) async throws -> Data {
@@ -108,4 +177,3 @@ final class APIClient {
         return data
     }
 }
-
